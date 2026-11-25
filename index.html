@@ -1,0 +1,1560 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REV26 · Mô hình 3D trang trí — Photobooth & Phía sân khấu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14172a; --panel:rgba(15,17,34,.88); --line:rgba(255,255,255,.10);
+    --txt:#eef0ff; --mut:#a3a8c6; --acc:#FCBF06; --pink:#FF387F; --cyan:#00FFDB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);
+    font-family:'Be Vietnam Pro',system-ui,-apple-system,sans-serif}
+  #viewport{position:fixed;inset:0}
+  #viewport canvas{display:block}
+  .labels{position:absolute;inset:0;pointer-events:none}
+
+  .top{position:fixed;top:14px;left:16px;right:16px;display:flex;align-items:center;gap:16px;z-index:6;pointer-events:none}
+  .brand{display:flex;gap:12px;align-items:center;pointer-events:auto}
+  .logo{font-family:'Press Start 2P',monospace;font-size:13px;padding:10px 10px 8px;background:var(--pink);color:#111;
+    box-shadow:3px 3px 0 #000;letter-spacing:1px}
+  .t1{font-weight:700;font-size:15px}
+  .t2{font-size:12px;color:var(--mut)}
+  .tabs{margin-left:auto;display:flex;gap:4px;background:var(--panel);padding:5px;border-radius:12px;
+    border:1px solid var(--line);pointer-events:auto;backdrop-filter:blur(8px)}
+  .tabs button{all:unset;cursor:pointer;padding:8px 14px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--mut)}
+  .tabs button:hover{color:var(--txt)}
+  .tabs button.on{background:var(--acc);color:#111}
+
+  .panel{position:fixed;left:16px;top:78px;bottom:16px;width:340px;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;display:flex;flex-direction:column;backdrop-filter:blur(10px);z-index:5;overflow:hidden}
+  .panel-head{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+  .panel-head h2{margin:0;font-size:17px}
+  .panel-head p{margin:5px 0 0;color:var(--mut);font-size:12.5px;line-height:1.5}
+  #partList{list-style:none;margin:0;padding:8px;overflow:auto;flex:1}
+  #partList li{border-radius:10px;margin-bottom:2px}
+  .pi{all:unset;cursor:pointer;display:flex;gap:10px;align-items:center;width:100%;padding:8px 10px;border-radius:10px;
+    font-size:13.5px;font-weight:500;box-sizing:border-box}
+  .pi:hover{background:rgba(255,255,255,.06)}
+  li.sel .pi{background:rgba(252,191,6,.14)}
+  .num{min-width:28px;height:22px;display:grid;place-items:center;font-weight:700;font-size:11px;background:#23264a;
+    border-radius:6px;color:var(--acc)}
+  li.sel .num{background:var(--acc);color:#111}
+  .desc{display:none;padding:4px 12px 12px 48px;font-size:12.8px;line-height:1.55;color:#d6d9ef}
+  li.sel .desc{display:block}
+  .desc ul{margin:2px 0;padding-left:16px}
+  .desc li{margin:3px 0}
+  .desc em{color:var(--mut)}
+  .desc b{color:#fff}
+  .mini{all:unset;cursor:pointer;margin-top:8px;display:inline-block;font-size:12px;font-weight:600;padding:5px 10px;
+    border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.06)}
+  .mini:hover{background:rgba(255,255,255,.12)}
+  .panel-foot{border-top:1px solid var(--line);padding:12px 16px 14px}
+  .pal-title{font-size:11.5px;color:var(--mut);margin-bottom:6px}
+  .palette{display:flex;gap:4px}
+  .sw{flex:1;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,.15)}
+  .hint{font-size:11.5px;color:var(--mut);margin-top:10px;line-height:1.5}
+
+  .toolbar{position:fixed;right:16px;bottom:16px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;z-index:5;
+    max-width:calc(100% - 390px)}
+  .toolbar button{all:unset;cursor:pointer;padding:9px 13px;border-radius:10px;font-size:13px;font-weight:600;
+    background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(8px)}
+  .toolbar button:hover{border-color:rgba(255,255,255,.3)}
+  .toolbar button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+  .note{position:fixed;right:16px;top:78px;font-size:11.5px;color:var(--mut);background:var(--panel);padding:7px 11px;
+    border-radius:8px;border:1px solid var(--line);z-index:5;max-width:300px;line-height:1.45}
+
+  .hs{pointer-events:auto;cursor:pointer;width:26px;height:26px}
+  .hs .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#111;color:var(--acc);
+    border:2px solid var(--acc);font:700 10.5px 'Be Vietnam Pro',sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.6);box-sizing:border-box}
+  .hs .t{display:none;position:absolute;left:32px;top:50%;transform:translateY(-50%);background:rgba(10,10,20,.92);
+    padding:4px 9px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;border:1px solid var(--line)}
+  .hs:hover .t,.hs.sel .t{display:block}
+  .hs.sel .n{background:var(--acc);color:#111}
+  .dim{font:600 11px 'Be Vietnam Pro',sans-serif;color:#111;background:var(--acc);padding:1px 6px;border-radius:4px;
+    white-space:nowrap;pointer-events:none}
+
+  #loading{position:fixed;inset:0;display:grid;place-items:center;color:var(--mut);font-size:14px;z-index:10;background:var(--bg)}
+
+  @media (max-width:900px){
+    .panel{top:auto;height:40vh;left:8px;right:8px;width:auto;bottom:8px}
+    .toolbar{bottom:calc(40vh + 16px);right:8px;max-width:none}
+    .note,.t2{display:none}
+    .top{flex-wrap:wrap}
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="loading">Đang tải mô hình 3D… (cần kết nối internet để tải thư viện Three.js)</div>
+<div id="viewport"></div>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">REV26</div>
+    <div>
+      <div class="t1">Reveillon 2026 · Mô hình 3D trang trí</div>
+      <div class="t2">Dựng từ bảng Canva "Bức tường xám (photobooth)"</div>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button data-area="overall">Tổng thể không gian</button>
+    <button data-area="photobooth">① Photobooth</button>
+    <button data-area="stage">② Phía sân khấu</button>
+  </nav>
+</header>
+
+<aside class="panel">
+  <div class="panel-head"><h2 id="areaTitle"></h2><p id="areaSub"></p></div>
+  <ol id="partList"></ol>
+  <div class="panel-foot">
+    <div class="pal-title">Bảng màu (lấy từ bảng Canva)</div>
+    <div class="palette" id="palette"></div>
+    <div class="hint">Kéo chuột để xoay · Cuộn để zoom · Chuột phải hoặc 2 ngón để di chuyển · Bấm vào vật thể hoặc số để xem chi tiết</div>
+  </div>
+</aside>
+
+<div class="note">Kích thước chỉ ước lượng để minh họa, cần đo thực tế địa điểm để chỉnh.</div>
+
+<div class="toolbar">
+  <button id="bExplode">Tách lớp</button>
+  <button id="bDims" class="on">Kích thước</button>
+  <button id="bPeople" class="on">Người (tỉ lệ)</button>
+  <button id="bScreen" class="on">Màn chiếu</button>
+  <button id="bParty">Party</button>
+  <button id="bRotate">Tự xoay</button>
+  <button id="bReset">Góc nhìn ban đầu</button>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ---------------------------------------------------------------- basics */
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const ZERO = V(0, 0, 0);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const rand = mulberry32(2026);
+
+// Palette from the Canva board
+const PAL = {
+  Y:'#FCBF06', P:'#FF387F', V:'#7A00BA', C:'#00FFDB', L:'#D0FFA4', N:'#000181', I:'#E8A0FF', B:'#006EE9', S:'#B3E7FF',
+  K:'#111114', W:'#ffffff', R:'#e8213a', O:'#ff8a00', E:'#1d2fd1', G:'#cfd3da'
+};
+const BOARD_PALETTE = ['#FCBF06','#FF387F','#7A00BA','#00FFDB','#D0FFA4','#000181','#E8A0FF','#006EE9','#B3E7FF'];
+
+const state = { area: 'photobooth', explode: false, dims: true, people: true, party: false, screen: true };
+
+/* ---------------------------------------------------------------- renderer */
+const host = document.getElementById('viewport');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+host.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.domElement.className = 'labels';
+host.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#14172a');
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.7;
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 100);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 0.4;
+controls.maxDistance = 40;
+controls.autoRotateSpeed = 0.8;
+
+const hemi = new THREE.HemisphereLight(0xe6ebff, 0x3a2a20, 0.7);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(3, 7, 7);
+sun.target.position.set(0, 1, 1.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.5, far: 25 });
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+const partyLights = [PAL.P, PAL.C, PAL.V].map(c => { const l = new THREE.PointLight(c, 0, 0, 1.6); scene.add(l); return l; });
+
+/* ---------------------------------------------------------------- helpers */
+const _mats = new Map();
+function mat(color, o = {}) {
+  const k = color + JSON.stringify(o);
+  if (!_mats.has(k)) _mats.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0, ...o }));
+  return _mats.get(k);
+}
+const mirrorMat = new THREE.MeshStandardMaterial({ color: '#f2f5fa', metalness: 0.85, roughness: 0.3, envMapIntensity: 1.6 });
+
+let building = null;            // which area is being built
+const swayers = [];             // tinsel instanced meshes
+const animators = [];           // per-frame callbacks
+const anim = fn => animators.push({ area: building, fn });
+
+function rod(a, b, r, m) {
+  const d = new THREE.Vector3().subVectors(b, a);
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 10), m);
+  mesh.position.copy(a).addScaledVector(d, 0.5);
+  mesh.quaternion.setFromUnitVectors(V(0, 1, 0), d.clone().normalize());
+  mesh.castShadow = true;
+  return mesh;
+}
+function sagPoints(a, b, sag, n = 24) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) { const t = i / n; const p = a.clone().lerp(b, t); p.y -= sag * 4 * t * (1 - t); pts.push(p); }
+  return pts;
+}
+function stringMesh(pts, color = '#222', r = 0.003) {
+  const c = new THREE.CatmullRomCurve3(pts);
+  return new THREE.Mesh(new THREE.TubeGeometry(c, pts.length * 2, r, 6, false), mat(color, { roughness: 0.9 }));
+}
+
+/* ---------------------------------------------------------------- pixel art */
+const SHAPES = {
+  heart: [
+    '.XX...XX.',
+    'XWXX.XXXX',
+    'XWXXXXXXX',
+    'XXXXXXXXX',
+    '.XXXXXXX.',
+    '..XXXXX..',
+    '...XXX...',
+    '....X....'],
+  pacman: [
+    '....YYYYY....',
+    '..YYYYYYYYY..',
+    '.YYYYYYYYYYY.',
+    '.YYYYYYYYY...',
+    'YYYYYYYY.....',
+    'YYYYYY.......',
+    'YYYY.........',
+    'YYYYYY.......',
+    'YYYYYYYY.....',
+    '.YYYYYYYYY...',
+    '.YYYYYYYYYYY.',
+    '..YYYYYYYYY..',
+    '....YYYYY....'],
+  ghost: [
+    '.....XXXX.....',
+    '...XXXXXXXX...',
+    '..XXXXXXXXXX..',
+    '.XXWWXXXXWWXX.',
+    '.XWWWWXXWWWWX.',
+    '.XWWEEXXWWEEX.',
+    'XXWWEEXXWWEEXX',
+    'XXXWWXXXXWWXXX',
+    'XXXXXXXXXXXXXX',
+    'XXXXXXXXXXXXXX',
+    'XXXXXXXXXXXXXX',
+    'XXXXXXXXXXXXXX',
+    'XX.XXX..XXX.XX',
+    'X...XX..XX...X'],
+  star: [
+    '.......X.......',
+    '......XXX......',
+    '......XXX......',
+    '.....XXXXX.....',
+    'XXXXXXXXXXXXXXX',
+    '.XXXXXXXXXXXXX.',
+    '..XXXXXXXXXXX..',
+    '...XXXXXXXXX...',
+    '...XXXXXXXXX...',
+    '..XXXXXXXXXXX..',
+    '..XXXXX.XXXXX..',
+    '.XXXX.....XXXX.',
+    '.XX.........XX.'],
+  controller: [
+    '..GGGGGGGGGGGG..',
+    '.GGGGGGGGGGGGGG.',
+    'GGGKGGGGGGGGRGGG',
+    'GGKKKGGGGGGBGRGG',
+    'GGGKGGGKKGGGBGGG',
+    'GGGGGGGGGGGGGGGG',
+    'GGGGG......GGGGG',
+    '.GGG........GGG.'],
+  coin: [
+    '..YYYY..',
+    '.YYWWYY.',
+    'YYWYYYOY',
+    'YYWYYYOY',
+    'YYWYYYOY',
+    'YYWYYYOY',
+    '.YYOOYY.',
+    '..YYYY..'],
+  play: [
+    '...XXXXXX...',
+    '..XXXXXXXX..',
+    '.XXXWXXXXXX.',
+    'XXXXWWXXXXXX',
+    'XXXXWWWXXXXX',
+    'XXXXWWWWXXXX',
+    'XXXXWWWWXXXX',
+    'XXXXWWWXXXXX',
+    'XXXXWWXXXXXX',
+    '.XXXWXXXXXX.',
+    '..XXXXXXXX..',
+    '...XXXXXX...'],
+  envelope: [
+    'XXXXXXXXXXXX',
+    'XKXXXXXXXXKX',
+    'XXKXXXXXXKXX',
+    'XXXKXXXXKXXX',
+    'XXXXKPPKXXXX',
+    'XXXXXPPXXXXX',
+    'XXXXXXXXXXXX',
+    'XXXXXXXXXXXX'],
+  pause: [
+    '...XXXXXX...',
+    '..XXXXXXXX..',
+    '.XXXXXXXXXX.',
+    'XXXWWXXWWXXX',
+    'XXXWWXXWWXXX',
+    'XXXWWXXWWXXX',
+    'XXXWWXXWWXXX',
+    'XXXWWXXWWXXX',
+    'XXXWWXXWWXXX',
+    '.XXXXXXXXXX.',
+    '..XXXXXXXX..',
+    '...XXXXXX...'],
+};
+
+const FONT = {
+  'A':['.###.','#...#','#...#','#####','#...#','#...#','#...#'],
+  'B':['####.','#...#','#...#','####.','#...#','#...#','####.'],
+  'C':['.###.','#...#','#....','#....','#....','#...#','.###.'],
+  'D':['####.','#...#','#...#','#...#','#...#','#...#','####.'],
+  'E':['#####','#....','#....','####.','#....','#....','#####'],
+  'G':['.###.','#...#','#....','#.###','#...#','#...#','.###.'],
+  'H':['#...#','#...#','#...#','#####','#...#','#...#','#...#'],
+  'I':['###','.#.','.#.','.#.','.#.','.#.','###'],
+  'K':['#...#','#..#.','#.#..','##...','#.#..','#..#.','#...#'],
+  'L':['#....','#....','#....','#....','#....','#....','#####'],
+  'M':['#...#','##.##','#.#.#','#.#.#','#...#','#...#','#...#'],
+  'N':['#...#','##..#','#.#.#','#..##','#...#','#...#','#...#'],
+  'O':['.###.','#...#','#...#','#...#','#...#','#...#','.###.'],
+  'P':['####.','#...#','#...#','####.','#....','#....','#....'],
+  'R':['####.','#...#','#...#','####.','#.#..','#..#.','#...#'],
+  'S':['.####','#....','#....','.###.','....#','....#','####.'],
+  'T':['#####','..#..','..#..','..#..','..#..','..#..','..#..'],
+  'U':['#...#','#...#','#...#','#...#','#...#','#...#','.###.'],
+  'V':['#...#','#...#','#...#','#...#','#...#','.#.#.','..#..'],
+  'X':['#...#','#...#','.#.#.','..#..','.#.#.','#...#','#...#'],
+  'Y':['#...#','#...#','.#.#.','..#..','..#..','..#..','..#..'],
+  '0':['.###.','#...#','#..##','#.#.#','##..#','#...#','.###.'],
+  '2':['.###.','#...#','....#','...#.','..#..','.#...','#####'],
+  '6':['..##.','.#...','#....','####.','#...#','#...#','.###.'],
+  '7':['#####','....#','...#.','..#..','.#...','.#...','.#...'],
+  ':':['.','#','#','.','#','#','.'],
+  "'":['#','#','.','.','.','.','.'],
+  ' ':['..','..','..','..','..','..','..'],
+};
+
+function withOutline(rows, ch = 'K') {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  const at = (x, y) => (y >= 0 && y < h && x >= 0 && x < rows[y].length) ? rows[y][x] : '.';
+  const out = [];
+  for (let y = -1; y <= h; y++) {
+    let s = '';
+    for (let x = -1; x <= w; x++) {
+      const c = at(x, y);
+      if (c !== '.') { s += c; continue; }
+      let n = false;
+      for (let dy = -1; dy <= 1 && !n; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if ((dx || dy) && at(x + dx, y + dy) !== '.') { n = true; break; }
+      }
+      s += n ? ch : '.';
+    }
+    out.push(s);
+  }
+  return out;
+}
+
+const _boxGeo = new Map();
+function pixelArt(rows, { cell = 0.025, depth, outline = true, colors = {} } = {}) {
+  if (outline) rows = withOutline(rows);
+  depth = depth ?? Math.max(0.004, cell * 0.35);
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  const byColor = {};
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const c = r[x]; if (c === '.') continue; (byColor[c] ||= []).push([x, y]); } });
+  const gk = cell + '_' + depth;
+  if (!_boxGeo.has(gk)) _boxGeo.set(gk, new THREE.BoxGeometry(cell * 0.93, cell * 0.93, depth));
+  const geo = _boxGeo.get(gk);
+  const group = new THREE.Group();
+  const m4 = new THREE.Matrix4();
+  for (const [c, list] of Object.entries(byColor)) {
+    const col = colors[c] || PAL[c] || '#ff00ff';
+    const material = col === 'mirror' ? mirrorMat : mat(col, { roughness: 0.55 });
+    const im = new THREE.InstancedMesh(geo, material, list.length);
+    list.forEach(([x, y], i) => { m4.makeTranslation((x - (w - 1) / 2) * cell, ((h - 1) / 2 - y) * cell, depth / 2); im.setMatrixAt(i, m4); });
+    im.castShadow = true;
+    group.add(im);
+  }
+  group.userData.size = { w: w * cell, h: h * cell };
+  return group;
+}
+function textRows(str, keys) {
+  const rows = Array(7).fill('');
+  let li = 0;
+  [...str].forEach((ch, i) => {
+    const g = FONT[ch] || FONT[' '];
+    const key = ch === ' ' ? '.' : keys[li++ % keys.length];
+    for (let y = 0; y < 7; y++) rows[y] += g[y].replace(/#/g, key) + (i < str.length - 1 ? '.' : '');
+  });
+  return rows;
+}
+const pixelText = (str, keys, cell, opts = {}) => pixelArt(textRows(str, keys), { cell, ...opts });
+function badge(text, keys, cell, plate) {
+  const g = new THREE.Group();
+  const t = pixelText(text, keys, cell);
+  const { w, h } = t.userData.size;
+  const p = new THREE.Mesh(new THREE.BoxGeometry(w + cell * 2, h + cell * 2, 0.008), mat(plate, { roughness: 0.6 }));
+  p.position.z = -0.004; p.castShadow = true;
+  t.position.z = 0.001;
+  g.add(p, t);
+  return g;
+}
+
+/* ---------------------------------------------------------------- decor builders */
+function tinsel(points, height, color, width = 0.012) {
+  const geo = new THREE.PlaneGeometry(width, height); geo.translate(0, -height / 2, 0);
+  const m = new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: 0.25, side: THREE.DoubleSide });
+  const im = new THREE.InstancedMesh(geo, m, points.length);
+  const d = points.map(p => ({ x: p.x, z: p.z, ry: rand() * Math.PI, ph: rand() * 6.283, s: 0.9 + rand() * 0.1 }));
+  const o = new THREE.Object3D();
+  const update = t => {
+    for (let i = 0; i < d.length; i++) {
+      const q = d[i];
+      o.position.set(q.x, 0, q.z);
+      o.rotation.set(Math.sin(t * 1.4 + q.ph) * 0.025, q.ry + Math.sin(t * 0.8 + q.ph) * 0.5, Math.sin(t * 1.1 + q.ph) * 0.02);
+      o.scale.set(1, q.s, 1);
+      o.updateMatrix();
+      im.setMatrixAt(i, o.matrix);
+    }
+    im.instanceMatrix.needsUpdate = true;
+  };
+  update(0); im.computeBoundingBox(); im.computeBoundingSphere();
+  im.castShadow = true;
+  swayers.push({ area: building, update });
+  return im;
+}
+function ringPoints(r, n, jitter = 0.01) {
+  const pts = [];
+  for (let i = 0; i < n; i++) { const a = rand() * Math.PI * 2; const rr = r + (rand() - 0.5) * jitter; pts.push({ x: Math.cos(a) * rr, z: Math.sin(a) * rr }); }
+  return pts;
+}
+function vinyl(r, labelColor) {
+  const g = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.004, 48), mat('#0d0d0f', { roughness: 0.3, metalness: 0.2 }));
+  disc.castShadow = true;
+  const lab = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.34, r * 0.34, 0.006, 32), mat(labelColor, { roughness: 0.7 }));
+  const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.008, 12), mat('#000000'));
+  g.add(disc, lab, hole);
+  for (const k of [0.55, 0.72, 0.88]) {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(r * k, r * k + 0.003, 48), mat('#34343a', { roughness: 0.4 }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.0025; g.add(ring);
+  }
+  g.rotation.x = Math.PI / 2;
+  return g;
+}
+const peopleMat = new THREE.MeshStandardMaterial({ color: '#b4bccd', roughness: 0.8, transparent: true, opacity: 0.55, depthWrite: false });
+function person(h = 1.65) {
+  const g = new THREE.Group();
+  const r = 0.17, len = h - 0.25 - 2 * r;
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 6, 16), peopleMat);
+  body.position.y = len / 2 + r; body.scale.z = 0.65;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 20, 16), peopleMat);
+  head.position.y = len + 2 * r + 0.115;
+  g.add(body, head);
+  return g;
+}
+function starShape(ro, ri, n = 5) {
+  const s = new THREE.Shape();
+  for (let i = 0; i < n * 2; i++) {
+    const r = i % 2 ? ri : ro, a = i / (n * 2) * Math.PI * 2 + Math.PI / 2;
+    const x = Math.cos(a) * r, y = Math.sin(a) * r;
+    i ? s.lineTo(x, y) : s.moveTo(x, y);
+  }
+  s.closePath();
+  return s;
+}
+function crumple(geo, amt) {
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const n = Math.sin(x * 61 + y * 37) * Math.cos(z * 53 - y * 29) + 0.5 * Math.sin(x * 113 - z * 97 + y * 71);
+    const r = Math.max(Math.hypot(x, z), 0.01);
+    const s = 1 + n * amt / r;
+    p.setXYZ(i, x * s, y, z * s);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+function glowTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,225,160,1)'); g.addColorStop(0.4, 'rgba(255,185,100,.45)'); g.addColorStop(1, 'rgba(255,150,60,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const glowMat = new THREE.SpriteMaterial({ map: glowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.85 });
+const bulbMat = new THREE.MeshStandardMaterial({ color: '#fff1c9', emissive: '#ffcf7a', emissiveIntensity: 1.6 });
+
+/* ---------------------------------------------------------------- areas, parts, dims */
+const areas = {};
+function newArea(key, info) {
+  const group = new THREE.Group(); group.visible = false; scene.add(group);
+  return (areas[key] = { key, group, parts: [], dims: [], ...info });
+}
+function part(area, id, num, title, desc, o = {}) {
+  const g = new THREE.Group(); area.group.add(g);
+  const p = { id, num, title, desc, group: g, area,
+    explode: o.explode || ZERO.clone(), view: (o.view || V(0.35, 0.25, 1)).normalize(),
+    anchor: o.anchor, minDist: o.minDist || 1.4 };
+  area.parts.push(p);
+  return p;
+}
+const dimMat = new THREE.LineBasicMaterial({ color: '#FCBF06', depthTest: false, transparent: true });
+function dim(area, parent, a, b, text, tick = 0.05) {
+  const dir = new THREE.Vector3().subVectors(b, a).normalize();
+  const perp = Math.abs(dir.y) > 0.9 ? V(1, 0, 0) : V(0, 1, 0);
+  const pts = [a, b,
+    a.clone().addScaledVector(perp, -tick), a.clone().addScaledVector(perp, tick),
+    b.clone().addScaledVector(perp, -tick), b.clone().addScaledVector(perp, tick)];
+  const line = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), dimMat);
+  line.renderOrder = 10;
+  const el = document.createElement('div'); el.className = 'dim'; el.textContent = text;
+  const lbl = new CSS2DObject(el); lbl.position.copy(a).lerp(b, 0.5);
+  const g = new THREE.Group(); g.add(line, lbl); parent.add(g);
+  area.dims.push(g);
+  return g;
+}
+function finalize(area) {
+  scene.updateMatrixWorld(true);
+  for (const p of area.parts) {
+    p.group.traverse(o => { if (o.isMesh || o.isSprite) o.userData.part = p; });
+    let a = p.anchor;
+    if (!a) {
+      const b = new THREE.Box3().setFromObject(p.group);
+      a = V((b.min.x + b.max.x) / 2, b.max.y + 0.1, (b.min.z + b.max.z) / 2);
+    }
+    const el = document.createElement('div'); el.className = 'hs';
+    el.innerHTML = `<span class="n">${p.num}</span><span class="t">${p.title}</span>`;
+    el.addEventListener('pointerdown', e => e.stopPropagation());
+    el.addEventListener('click', e => { e.stopPropagation(); select(p); });
+    const lbl = new CSS2DObject(el); lbl.position.copy(a); p.group.add(lbl);
+    p.label = el; p.labelObj = lbl; el.dataset.area = area.key;
+  }
+}
+
+/* ================================================================ AREA 1 — PHOTOBOOTH */
+building = 'photobooth';
+const PB = newArea('photobooth', {
+  title: 'Photobooth (Bức tường xám)',
+  sub: 'Dùng tường xám có sẵn làm nền, phủ rèm kim tuyến và element pixel. Phía trước là khung ảnh cầm tay cho 3–4 người.',
+  cam: { pos: V(2.6, 1.9, 5.4), tgt: V(0, 1.3, 0.7) },
+  explodeCam: { pos: V(6.2, 2.8, 4.6), tgt: V(0, 1.3, 1.5) },
+  partyCenter: V(0, 2.3, 1.8),
+});
+{
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(9, 6.5), mat('#4a3426', { roughness: 0.85 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 3.1); floor.receiveShadow = true;
+  PB.group.add(floor);
+}
+
+// 1 — wall
+const pb1 = part(PB, 'pb-wall', '1', 'Bức tường xám (nền có sẵn)', `
+  <ul><li>Dùng luôn bức tường xám trong quán làm nền, không cần dựng vách riêng. Mọi thứ dán thẳng lên tường.</li>
+  <li>Mô hình: tường ~5m × 2,8m <em>(ước lượng, cần đo thực tế)</em>.</li>
+  <li>Các lớp từ tường ra ngoài: tường → element → rèm kim tuyến → đĩa than → người → khung ảnh. Bấm <b>Tách lớp</b> để xem riêng từng lớp.</li></ul>`,
+  { anchor: V(-2.35, 0.25, 0.06), view: V(0.3, 0.2, 1) });
+{
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 2.8, 0.12), new THREE.MeshStandardMaterial({ color: '#8b8f96', roughness: 0.95 }));
+  wall.position.set(0, 1.4, -0.06); wall.receiveShadow = true;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(5, 0.08, 0.02), mat('#4b4e55'));
+  base.position.set(0, 0.04, 0.01);
+  pb1.group.add(wall, base);
+  dim(PB, pb1.group, V(-2.5, 2.92, 0.02), V(2.5, 2.92, 0.02), '≈5m (ước lượng)');
+}
+
+// 4 — pixel elements on the wall
+const pb4 = part(PB, 'pb-elem', '4', 'Element pixel dán kín tường', `
+  <ul><li>Dán kín tường quanh rèm bằng element cùng tone màu: trái tim, Pac-Man, ma, tay cầm game, đồng xu, nút play/pause, ngôi sao.</li>
+  <li>Style pixel đơn giản, lưới 15×15–20×20 ô, mỗi ô 2–3cm, nên mỗi element to <b>30–50cm</b>.</li>
+  <li>Ngôi sao gương: ghép từ ô giấy bạc/gương như ảnh tham khảo.</li></ul>`,
+  { anchor: V(1.85, 2.4, 0.06), explode: V(0, 0, 0.3), view: V(0.25, 0.15, 1) });
+{
+  const E = (shape, cell, colors, x, y, rz = 0) => { const o = pixelArt(SHAPES[shape], { cell, colors }); o.position.set(x, y, 0.002); o.rotation.z = rz; return o; };
+  pb4.group.add(
+    E('heart', 0.03, { X: PAL.R }, -2.0, 2.25, 0.12),
+    E('pacman', 0.026, {}, -1.55, 1.65, -0.08),
+    E('ghost', 0.024, { X: PAL.P }, -2.15, 1.15, 0.1),
+    E('controller', 0.025, {}, -1.7, 0.62, -0.12),
+    E('coin', 0.03, {}, -2.25, 0.45, 0.2),
+    E('play', 0.026, { X: PAL.C }, -1.5, 2.5, -0.1),
+    E('star', 0.032, { X: 'mirror' }, 1.8, 1.95, 0.1),
+    E('ghost', 0.024, { X: PAL.C }, 2.2, 1.05, -0.12),
+    E('heart', 0.028, { X: PAL.P }, 1.55, 1.15, -0.15),
+    E('pause', 0.026, { X: PAL.V }, 2.25, 2.5, 0.12),
+    E('coin', 0.028, {}, 1.5, 0.5, -0.2),
+    E('ghost', 0.022, { X: PAL.O }, 2.25, 0.45, 0.08),
+  );
+  dim(PB, pb4.group, V(-2.17, 1.97, 0.03), V(-1.83, 1.97, 0.03), '≈33cm');
+}
+
+// 2 — tinsel curtain
+const pb2 = part(PB, 'pb-curtain', '2', 'Rèm kim tuyến bạc', `
+  <ul><li>Theo ảnh tham khảo (1): thả rèm kim tuyến làm nền. Ghi chú trên bảng: "thả xuôi theo tường thành dải là oki".</li>
+  <li>Mô hình: ~2,4m × 2,2m, 2 lớp cho dày.</li>
+  <li><em>Gợi ý:</em> mua rèm 1m × 2m, ghép 2–3 tấm; dán mép trên bằng băng dính giấy để không hỏng tường.</li></ul>`,
+  { explode: V(0, 0, 0.65), view: V(0.2, 0.1, 1) });
+{
+  const pts = [];
+  for (let L = 0; L < 2; L++) for (let i = 0; i < 300; i++) pts.push({ x: -1.2 + rand() * 2.4, z: 0.015 + L * 0.014 + rand() * 0.006 });
+  const cur = tinsel(pts, 2.2, '#d7dbe2');
+  cur.position.set(0, 2.5, 0);
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(2.44, 0.04, 0.02), mat('#c9ced6', { metalness: 0.8, roughness: 0.3 }));
+  bar.position.set(0, 2.5, 0.02);
+  pb2.group.add(cur, bar);
+  dim(PB, pb2.group, V(-1.2, 0.2, 0.06), V(1.2, 0.2, 0.06), '≈2,4m');
+  dim(PB, pb2.group, V(1.3, 0.3, 0.06), V(1.3, 2.5, 0.06), '≈2,2m');
+}
+
+// 3 — vinyl records
+const pb3 = part(PB, 'pb-vinyl', '3', 'Đĩa than trang trí', `
+  <ul><li>Đĩa than đen dán rải trên rèm như ảnh tham khảo, hợp theme Retro 80s Disco.</li>
+  <li>Mô hình: 6 đĩa Ø30cm, đặt ở mép rèm để không bị khung ảnh che.</li>
+  <li><em>Gợi ý:</em> không có đĩa thật thì in hoặc cắt từ bìa đen; nhãn giữa dùng màu trong bảng màu.</li></ul>`,
+  { explode: V(0, 0, 1.0), anchor: V(0.95, 2.33, 0.1), view: V(0.3, 0.1, 1) });
+[[-0.9, 2.12, PAL.P], [-0.4, 2.3, PAL.Y], [0.3, 2.24, PAL.C], [0.88, 2.06, PAL.V], [-0.95, 1.25, PAL.L], [0.95, 1.1, PAL.O]]
+  .forEach(([x, y, c]) => { const v = vinyl(0.15, c); v.position.set(x, y, 0.06); pb3.group.add(v); });
+
+// 8 — people for scale
+const pb8 = part(PB, 'pb-people', '8', 'Người chụp (để so tỉ lệ)', `
+  <ul><li>3 người cao ~1,6–1,7m đứng sau khung để ước lượng tỉ lệ. Khung vừa cho 3–4 người.</li>
+  <li>Ẩn/hiện bằng nút <b>Người (tỉ lệ)</b>.</li></ul>`,
+  { explode: V(0, 0, 1.3), anchor: V(-0.42, 1.8, 0.8), view: V(0.5, 0.2, 1) });
+[[-0.42, 1.6], [0, 1.7], [0.42, 1.62]].forEach(([x, h]) => { const p = person(h); p.position.set(x, 0, 0.8); pb8.group.add(p); });
+PB.peoplePart = pb8;
+
+// 5 — handheld photo frame
+let frameMat;
+const pb5 = part(PB, 'pb-frame', '5', 'Khung ảnh cầm tay', `
+  <ul><li>To cỡ khung "CHECKPOINT" trong ảnh tham khảo, không cần to bằng cả tấm bảng. Đủ cho 3–4 người.</li>
+  <li>Mô hình: ngoài 1,5m × 1,05m, lỗ trong ~1,26m × 0,67m.</li>
+  <li>Khung trắng (theo ghi chú). Chữ pixel dán thẳng lên khung: <b>LET'S PLAY</b>, <b>UEVP REV26</b>, badge <b>LEVEL UP</b>.</li>
+  <li>Element trên khung to ~20–25cm: trái tim, tay cầm game, ngôi sao. Hai cạnh bên có ma và Pac-Man nhỏ.</li>
+  <li><em>Gợi ý:</em> làm bằng foam board / formex 5mm.</li></ul>
+  <button class="mini" data-act="frameColor">Đổi màu khung: trắng ↔ đen</button>`,
+  { explode: V(0, 0, 2.0), view: V(0.35, 0.15, 1), minDist: 2.0 });
+{
+  const W = 1.5, H = 1.05, sd = 0.12, tp = 0.2, bt = 0.18, T = 0.02;
+  frameMat = new THREE.MeshStandardMaterial({ color: '#f3f3f0', roughness: 0.75 });
+  const g = new THREE.Group(); g.position.set(0, 1.35, 1.15);
+  const box = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, T), frameMat); m.position.set(x, y, 0); m.castShadow = true; g.add(m); };
+  box(W, tp, 0, H / 2 - tp / 2); box(W, bt, 0, -H / 2 + bt / 2);
+  const ih = H - tp - bt, iy = (-H / 2 + bt + H / 2 - tp) / 2;
+  box(sd, ih, -W / 2 + sd / 2, iy); box(sd, ih, W / 2 - sd / 2, iy);
+  const put = (o, x, y, rz = 0, z = T / 2 + 0.001) => { o.position.set(x, y, z); o.rotation.z = rz; g.add(o); return o; };
+  put(pixelText("LET'S PLAY", ['P', 'Y', 'C', 'B', 'V', 'O', 'L'], 0.0105), 0.05, H / 2 - tp / 2);
+  put(pixelText('UEVP REV26', ['B', 'B', 'B', 'B', 'P', 'P', 'P', 'P', 'P'], 0.0105), 0, -H / 2 + bt / 2);
+  ['R', 'P', 'C', 'O'].forEach((c, i) => put(pixelArt(SHAPES.ghost, { cell: 0.0062, colors: { X: PAL[c] } }), -W / 2 + sd / 2, iy + 0.24 - i * 0.16));
+  put(pixelArt(SHAPES.pacman, { cell: 0.0066 }), W / 2 - sd / 2, iy + 0.24, -Math.PI / 2);
+  [0, 1, 2].forEach(i => put(pixelArt(SHAPES.coin, { cell: 0.009 }), W / 2 - sd / 2, iy + 0.06 - i * 0.14));
+  put(pixelArt(SHAPES.heart, { cell: 0.019, colors: { X: PAL.R } }), W / 2 - 0.02, H / 2 - 0.02, -0.25, T / 2 + 0.006);
+  put(badge('LEVEL UP', ['Y', 'Y', 'Y', 'Y', 'Y', 'L', 'L'], 0.008, PAL.V), -W / 2 + 0.12, H / 2 + 0.01, 0.18, T / 2 + 0.008);
+  put(pixelArt(SHAPES.controller, { cell: 0.013 }), -W / 2 + 0.06, -H / 2 + 0.05, 0.2, T / 2 + 0.006);
+  put(pixelArt(SHAPES.star, { cell: 0.013, colors: { X: PAL.Y } }), W / 2 - 0.05, -H / 2 + 0.04, -0.15, T / 2 + 0.006);
+  pb5.group.add(g);
+  dim(PB, pb5.group, V(-0.75, 0.74, 1.17), V(0.75, 0.74, 1.17), '1,5m');
+  dim(PB, pb5.group, V(0.9, 0.825, 1.17), V(0.9, 1.875, 1.17), '1,05m');
+}
+
+// 6 — handles
+const pb6 = part(PB, 'pb-handles', '6', 'Tay cầm phía sau khung', `
+  <ul><li>Hai tay cầm dán phía sau khung để 2 người đứng ngoài cùng cầm.</li>
+  <li><em>Gợi ý:</em> thanh gỗ hoặc ống nhựa ~50cm, cố định bằng băng dính vải hoặc keo nến.</li></ul>`,
+  { explode: V(0, 0, 2.0), view: V(0.8, 0.2, -0.6), minDist: 1.1, anchor: V(0.69, 0.5, 1.1) });
+{
+  const wood = mat('#c49a6c', { roughness: 0.7 });
+  [-0.69, 0.69].forEach(x => pb6.group.add(rod(V(x, 0.6, 1.124), V(x, 1.15, 1.124), 0.016, wood)));
+}
+
+// 7 — tripod (alternative)
+const pb7 = part(PB, 'pb-tripod', '7', 'Chân tripod (phương án 2)', `
+  <ul><li>Thay vì cầm tay, có thể để khung đứng trên tripod. Vẽ mờ vì đây là phương án thay thế.</li>
+  <li><em>Gợi ý:</em> kẹp khung vào chân đèn/loa, tâm khung cao ~1,35m.</li></ul>`,
+  { explode: V(0, 0, 2.0), anchor: V(-0.25, 0.22, 1.25), view: V(0.6, 0.3, 1) });
+{
+  const tm = new THREE.MeshStandardMaterial({ color: '#2a2d36', roughness: 0.5, metalness: 0.4, transparent: true, opacity: 0.45, depthWrite: false });
+  const apex = V(0, 0.48, 1.1);
+  pb7.group.add(rod(apex, V(0, 0.84, 1.1), 0.014, tm));
+  for (let i = 0; i < 3; i++) { const a = Math.PI / 2 + i * 2 * Math.PI / 3; pb7.group.add(rod(apex, V(Math.cos(a) * 0.4, 0, 1.1 + Math.sin(a) * 0.4), 0.011, tm)); }
+  const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.04), tm); clamp.position.set(0, 0.84, 1.12);
+  pb7.group.add(clamp);
+}
+finalize(PB);
+
+/* ================================================================ AREA 2 — STAGE */
+building = 'stage';
+const ST = newArea('stage', {
+  title: 'Phía sân khấu',
+  sub: 'Chữ pixel REV26:….. trên sân khấu, màn chiếu cho game (bật/tắt được), đèn trang trí, element dán kín tường, trang trí trần và dây treo.',
+  cam: { pos: V(1.8, 1.95, 8.6), tgt: V(0, 1.75, 1.6) },
+  explodeCam: { pos: V(4.6, 4.8, 8.8), tgt: V(0, 2.0, 2.3) },
+  partyCenter: V(0, 2.4, 2.8),
+});
+{
+  const wallMat = new THREE.MeshStandardMaterial({ color: '#d9cdbb', roughness: 0.9 });
+  const woodMat = new THREE.MeshStandardMaterial({ color: '#6e4a30', roughness: 0.7 });
+  const plane = (w, h, m, pos, rotY = 0) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.position.copy(pos); p.rotation.y = rotY; p.receiveShadow = true; ST.group.add(p); };
+  plane(7, 3, wallMat, V(0, 1.5, 0));
+  plane(7, 1, woodMat, V(0, 0.5, 0.004));
+  plane(5, 3, wallMat, V(-3.5, 1.5, 2.5), Math.PI / 2);
+  plane(5, 1, woodMat, V(-3.496, 0.5, 2.5), Math.PI / 2);
+  plane(5, 3, wallMat, V(3.5, 1.5, 2.5), -Math.PI / 2);
+  plane(5, 1, woodMat, V(3.496, 0.5, 2.5), -Math.PI / 2);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(7, 5), mat('#4a3426', { roughness: 0.85 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 2.5); floor.receiveShadow = true;
+  ST.group.add(floor);
+  const cl = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(7, 0.001, 5)),
+    new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.2 }));
+  cl.position.set(0, 3, 2.5);
+  ST.group.add(cl);
+  dim(ST, ST.group, V(-3.3, 0, 0.15), V(-3.3, 3, 0.15), 'Trần ≈3m (ước lượng)');
+}
+
+// 1 — stage area (no platform: performers stand on the floor)
+const st1 = part(ST, 'st-stage', '1', 'Khu vực sân khấu (không có bục)', `
+  <ul><li>Sân khấu <b>không có bục</b>: người biểu diễn đứng thẳng trên sàn, sát tường sau.</li>
+  <li>Viền vàng chỉ để đánh dấu khu vực trong mô hình (~4m × 2m, ước lượng). Ngoài thực tế không cần dán; nếu muốn thì dùng băng dính màu.</li>
+  <li>Tường gỗ/kem dựng theo ảnh địa điểm. Cần đo thực tế để chỉnh.</li></ul>`,
+  { anchor: V(-1.75, 0.15, 2.0), view: V(0.3, 0.6, 1), minDist: 3.5 });
+{
+  const zone = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), mat('#5a4030', { roughness: 0.9 }));
+  zone.rotation.x = -Math.PI / 2; zone.position.set(0, 0.002, 1.0); zone.receiveShadow = true;
+  st1.group.add(zone);
+  const tape = mat(PAL.Y, { roughness: 0.5 });
+  for (const [w, d, x, z] of [[4, 0.04, 0, 0.02], [4, 0.04, 0, 1.98], [0.04, 2, -1.98, 1.0], [0.04, 2, 1.98, 1.0]]) {
+    const t = new THREE.Mesh(new THREE.BoxGeometry(w, 0.004, d), tape); t.position.set(x, 0.004, z); st1.group.add(t);
+  }
+  dim(ST, st1.group, V(-2, 0.05, 2.12), V(2, 0.05, 2.12), '≈4m (ước lượng)');
+}
+
+// 2 — REV26 pixel text
+let revDimLabel, revHolder;
+const st2 = part(ST, 'st-rev', '2', 'Chữ pixel REV26:…..', `
+  <ul><li>Ghi chú trên bảng: "Sân khấu: ghi tên bằng pixel REV26:….." Phần sau dấu ":" chưa chốt nên mô hình để 5 ô nhấp nháy.</li>
+  <li>Mô hình: mỗi ô 5cm, chữ cao ~45cm, phần "REV26:" dài ~1,65m.</li>
+  <li>Màu từng chữ xen kẽ theo bảng màu neon, có viền đen.</li>
+  <li>Khi bật <b>Màn chiếu</b>, màn che đúng chỗ chữ, nên mô hình dời chữ lên phía trên màn và thu nhỏ còn ~75% (dài ~1,25m, mỗi ô ~3,75cm). Đây là một phương án bố trí, có thể đổi.</li></ul>`,
+  { explode: V(0, 0, 0.6), view: V(0, 0.05, 1), minDist: 2.6 });
+{
+  revHolder = new THREE.Group(); revHolder.position.set(0, 2.0, 0); st2.group.add(revHolder);
+  const rev = pixelText('REV26:', ['P', 'Y', 'C', 'B', 'V', 'L'], 0.05, { depth: 0.02 });
+  rev.position.set(-0.275, 0, 0.002);
+  revHolder.add(rev);
+  const dots = [];
+  for (let i = 0; i < 5; i++) {
+    const d = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.046, 0.02), mat('#ffffff', { roughness: 0.4 }));
+    d.position.set(0.65 + i * 0.1, -0.15, 0.012); d.castShadow = true;
+    revHolder.add(d); dots.push(d);
+  }
+  anim(t => { const n = Math.floor(t * 2.5) % 7; dots.forEach((d, i) => d.visible = i < n); });
+  revDimLabel = dim(ST, revHolder, V(-1.1, -0.31, 0.03), V(0.55, -0.31, 0.03), '≈1,65m').children[1].element;
+  // When the projection screen is on, the sign moves above the screen and shrinks to 75%
+  anim((t, dt) => {
+    const k = 1 - Math.exp(-dt * 5);
+    const ty = state.screen ? 2.66 : 2.0, ts = state.screen ? 0.75 : 1;
+    revHolder.position.y += (ty - revHolder.position.y) * k;
+    revHolder.scale.setScalar(revHolder.scale.x + (ts - revHolder.scale.x) * k);
+  });
+}
+
+// 3a/3b/3c — pendant lamps
+function lamp(kind, x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  g.add(rod(V(0, 3, 0), V(0, 2.66, 0), 0.004, mat('#111111')));
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.04, 16), mat('#222222', { metalness: 0.5, roughness: 0.4 }));
+  cap.position.y = 2.66;
+  let shadeGeo = new THREE.CylinderGeometry(0.07, 0.17, 0.2, 40, 6, true);
+  let shadeMat = new THREE.MeshStandardMaterial({ color: '#c8352f', roughness: 0.55, side: THREE.DoubleSide });
+  if (kind === 'foil') {
+    shadeGeo = crumple(shadeGeo, 0.012);
+    shadeMat = new THREE.MeshStandardMaterial({ color: '#e9edf2', metalness: 1, roughness: 0.28, side: THREE.DoubleSide, flatShading: true });
+  }
+  const shade = new THREE.Mesh(shadeGeo, shadeMat); shade.position.y = 2.55; shade.castShadow = true;
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), bulbMat); bulb.position.y = 2.48;
+  g.add(cap, shade, bulb);
+  if (kind === 'eyes') {
+    for (const sx of [-1, 1]) {
+      const eg = new THREE.Group(); eg.position.set(sx * 0.05, 2.54, 0.12); eg.rotation.x = 0.46;
+      const white = new THREE.Mesh(new THREE.SphereGeometry(0.036, 20, 14), mat('#ffffff', { roughness: 0.3 })); white.scale.z = 0.45;
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.017, 16, 12), mat('#0a0a0a', { roughness: 0.3 })); pupil.scale.z = 0.5; pupil.position.z = 0.014;
+      eg.add(white, pupil); g.add(eg);
+      anim(t => { pupil.position.x = Math.sin(t * 4.3 + sx) * 0.008; pupil.position.y = -0.006 + Math.cos(t * 3.1 + sx * 2) * 0.006; });
+    }
+  }
+  if (kind === 'tinsel') {
+    const tz = tinsel(ringPoints(0.175, 150, 0.012), 0.26, '#ff5fa8');
+    tz.position.y = 2.63; g.add(tz);
+  }
+  return g;
+}
+const lampDefs = [
+  ['3a', 'eyes', 'Đèn dán mắt', -1.2, `<ul><li>Ghi chú trên bảng: "Dán mắt lên đèn". Dán mắt nhựa (googly eyes) loại to lên chao đèn.</li><li><em>Gợi ý:</em> mắt Ø6–8cm để nhìn rõ từ xa.</li></ul>`],
+  ['3b', 'tinsel', 'Đèn quấn tua rua', 0, `<ul><li>Ghi chú trên bảng: "Hoặc tua rua quấn quanh đèn". Quấn một vòng tua rua quanh chao, buông xuống ~30cm.</li><li><em>Gợi ý:</em> chọn tua rua màu hồng/tím cho hợp bảng màu.</li></ul>`],
+  ['3c', 'foil', 'Đèn bọc giấy bạc', 1.2, `<ul><li>Ghi chú trên bảng: "Quấn giấy bạc". Bọc chao đèn bằng giấy bạc vo nhăn để phản sáng.</li><li><em>Lưu ý:</em> để hở phía bóng đèn để tránh nóng.</li></ul>`],
+];
+for (const [num, kind, title, x, desc] of lampDefs) {
+  const lp = part(ST, 'st-lamp-' + kind, num, title, desc, { explode: V(0, 0.5, 0), view: V(0.25, -0.05, 1), minDist: 1.0 });
+  lp.group.add(lamp(kind, x, 1.4));
+}
+
+// 4 — hide wall lights
+const st4 = part(ST, 'st-sconce', '4', 'Giấu đèn tường bằng element', `
+  <ul><li>Ghi chú trên ảnh địa điểm: "Kiếm cách giấu đèn".</li>
+  <li><em>Gợi ý:</em> che đèn tường bằng một element pixel to (ngôi sao, trái tim), gắn cách tường ~10–15cm bằng cọc đỡ để ánh sáng hắt ra viền thành hiệu ứng backlight.</li></ul>`,
+  { explode: V(0, 0, 0.35), anchor: V(2.7, 2.3, 0.2), view: V(-0.15, 0, 1), minDist: 1.4 });
+{
+  const sconceMat = new THREE.MeshStandardMaterial({ color: '#fff3d6', emissive: '#ffc46b', emissiveIntensity: 1.4 });
+  for (const [x, shape, colors, cell] of [[-2.7, 'star', { X: PAL.Y }, 0.03], [2.7, 'heart', { X: PAL.P }, 0.036]]) {
+    const lb = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.08), sconceMat); lb.position.set(x, 1.85, 0.04);
+    const glow = new THREE.Sprite(glowMat); glow.scale.set(0.9, 0.9, 1); glow.position.set(x, 1.85, 0.1);
+    const cov = pixelArt(SHAPES[shape], { cell, colors }); cov.position.set(x, 1.85, 0.15);
+    const peg = mat('#888888');
+    st4.group.add(lb, glow, cov, rod(V(x - 0.1, 1.85, 0), V(x - 0.1, 1.85, 0.15), 0.006, peg), rod(V(x + 0.1, 1.85, 0), V(x + 0.1, 1.85, 0.15), 0.006, peg));
+  }
+}
+
+// 5 — wall elements
+const st5 = part(ST, 'st-wall', '5', 'Element pixel dán kín tường', `
+  <ul><li>Ghi chú trên bảng: "Có thể spam element lên tường".</li>
+  <li>Tường trái: hàng ma đuổi Pac-Man như ảnh tham khảo, chữ LET'S PLAY, tay cầm game, trái tim, đồng xu, ngôi sao.</li>
+  <li>Tường sau: vài element nhỏ quanh chữ REV26.</li>
+  <li>Element 30–50cm, mỗi ô ~3cm, giống bên photobooth để đồng bộ.</li></ul>`,
+  { explode: V(0.6, 0, 0), anchor: V(-3.45, 2.9, 2.5), view: V(1, 0.15, 0.25), minDist: 3.2 });
+{
+  const put = (parent, o, x, y, rz = 0) => { o.position.set(x, y, 0.002); o.rotation.z = rz; parent.add(o); return o; };
+  const lw = new THREE.Group(); lw.position.set(-3.49, 0, 2.5); lw.rotation.y = Math.PI / 2; st5.group.add(lw);
+  ['R', 'P', 'C', 'O'].forEach((c, i) => put(lw, pixelArt(SHAPES.ghost, { cell: 0.022, colors: { X: PAL[c] } }), -1.5 + i * 0.48, 2.45));
+  put(lw, pixelArt(SHAPES.pacman, { cell: 0.024 }), 0.55, 2.45);
+  for (let i = 0; i < 3; i++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.012), mat('#ffffff')); put(lw, d, 0.95 + i * 0.25, 2.45); }
+  put(lw, pixelText("LET'S PLAY", ['P', 'Y', 'C', 'B', 'V', 'O', 'L'], 0.026), -0.55, 1.6);
+  put(lw, pixelArt(SHAPES.controller, { cell: 0.028 }), 1.05, 1.55, -0.1);
+  put(lw, pixelArt(SHAPES.heart, { cell: 0.03, colors: { X: PAL.R } }), -1.95, 1.55, 0.12);
+  put(lw, pixelArt(SHAPES.coin, { cell: 0.03 }), 1.85, 1.3, 0.15);
+  put(lw, pixelArt(SHAPES.star, { cell: 0.024, colors: { X: PAL.Y } }), 2.0, 2.4, -0.1);
+  put(lw, pixelArt(SHAPES.play, { cell: 0.026, colors: { X: PAL.C } }), -2.1, 2.45);
+  const bw = new THREE.Group(); st5.group.add(bw);
+  put(bw, pixelArt(SHAPES.coin, { cell: 0.028 }), -1.85, 1.35, 0.15);
+  put(bw, pixelArt(SHAPES.heart, { cell: 0.028, colors: { X: PAL.P } }), 1.85, 1.35, -0.12);
+  put(bw, pixelArt(SHAPES.ghost, { cell: 0.02, colors: { X: PAL.C } }), 1.6, 2.6, 0.1);
+  put(bw, pixelArt(SHAPES.pause, { cell: 0.022, colors: { X: PAL.V } }), -1.65, 2.6, -0.1);
+}
+
+// 6 — ceiling decor
+const st6 = part(ST, 'st-ceiling', '6', 'Trang trí trần', `
+  <ul><li>Ghi chú trên bảng: "Có thể decor trần" và "Dán dây trên trần nhà".</li>
+  <li>Gồm dây xích giấy nhiều màu, quả cầu disco, chùm tua rua vàng/đỏ, sao treo (theo các ảnh tham khảo).</li>
+  <li>Ghi chú cạnh ảnh: "Style kiểu này mà ít element lại". Mô hình đã giảm số lượng.</li>
+  <li><em>Trần cao ~3m (ước lượng).</em></li></ul>`,
+  { explode: V(0, 0.8, 0), view: V(0.25, 0.05, 1), minDist: 3.5 });
+{
+  const chain = (a, b, sag) => {
+    const curve = new THREE.CatmullRomCurve3(sagPoints(a, b, sag, 30));
+    const n = Math.floor(curve.getLength() / 0.055);
+    const geo = new THREE.TorusGeometry(0.03, 0.007, 6, 14); geo.scale(1.5, 1, 1);
+    const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: 0.8 }), n);
+    const cols = [PAL.P, PAL.Y, PAL.C, PAL.V, PAL.L, PAL.B, PAL.O];
+    const o = new THREE.Object3D(), col = new THREE.Color();
+    for (let i = 0; i < n; i++) {
+      const t = (i + 0.5) / n;
+      o.position.copy(curve.getPointAt(t));
+      o.quaternion.setFromUnitVectors(V(1, 0, 0), curve.getTangentAt(t));
+      o.rotateX(i % 2 ? Math.PI / 2 : 0);
+      o.updateMatrix(); im.setMatrixAt(i, o.matrix); im.setColorAt(i, col.set(cols[i % cols.length]));
+    }
+    im.castShadow = true;
+    return im;
+  };
+  st6.group.add(
+    chain(V(-3.45, 2.95, 0.6), V(3.45, 2.95, 4.6), 0.3),
+    chain(V(-3.45, 2.95, 4.6), V(3.45, 2.95, 0.6), 0.3),
+    chain(V(-3.45, 2.95, 2.9), V(3.45, 2.95, 2.9), 0.25));
+  const discoMat = new THREE.MeshStandardMaterial({ color: '#ffffff', metalness: 1, roughness: 0.06, flatShading: true });
+  for (const [x, y, z, r] of [[-1.8, 2.5, 2.9, 0.17], [0.4, 2.55, 3.5, 0.2], [2.3, 2.45, 2.6, 0.15]]) {
+    st6.group.add(rod(V(x, 3, z), V(x, y + r, z), 0.003, mat('#cccccc')));
+    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 3), discoMat);
+    ball.position.set(x, y, z); ball.castShadow = true; st6.group.add(ball);
+    anim((t, dt) => { ball.rotation.y += dt * 0.6; });
+  }
+  for (const [x, z, color] of [[-2.95, 0.6, '#e5b33e'], [2.95, 0.6, '#d8323a']]) {
+    const tc = tinsel(ringPoints(0.2, 170, 0.03), 0.6, color);
+    tc.position.set(x, 2.98, z);
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.008, 8, 32), mat('#444444', { metalness: 0.6 }));
+    hoop.rotation.x = Math.PI / 2; hoop.position.set(x, 2.98, z);
+    st6.group.add(tc, hoop);
+  }
+  const starGeo = new THREE.ExtrudeGeometry(starShape(0.12, 0.05), { depth: 0.012, bevelEnabled: false }); starGeo.center();
+  const starMat = new THREE.MeshStandardMaterial({ color: '#f2c94c', metalness: 1, roughness: 0.25 });
+  [[-2.6, 2.6, 3.8], [-0.3, 2.68, 2.6], [1.2, 2.62, 3.1], [2.8, 2.55, 4.1]].forEach(([x, y, z], i) => {
+    st6.group.add(rod(V(x, 3, z), V(x, y + 0.12, z), 0.002, mat('#cccccc')));
+    const s = new THREE.Mesh(starGeo, starMat); s.position.set(x, y, z); s.castShadow = true; st6.group.add(s);
+    anim(t => { s.rotation.y = t * 0.8 + i; });
+  });
+}
+
+// 7 — pixel heart garland
+const st7 = part(ST, 'st-hearts', '7', 'Dây treo tim pixel', `
+  <ul><li>Dây tim pixel đỏ/hồng treo ngang mép trước sân khấu, như ảnh tham khảo.</li>
+  <li>Mô hình: tim ~18cm, 8 tim trên dây dài 4m.</li>
+  <li><em>Gợi ý:</em> đây cũng là cách làm dây treo cho ý tưởng "A Letter to My Future Self" của Hân.</li></ul>`,
+  { explode: V(0, 0.3, 0.45), anchor: V(1.7, 2.98, 2.05), view: V(0.2, 0.1, 1), minDist: 2.6 });
+{
+  const pts = sagPoints(V(-2, 2.88, 2.05), V(2, 2.88, 2.05), 0.25, 30);
+  st7.group.add(stringMesh(pts, '#3a2a20', 0.003));
+  const curve = new THREE.CatmullRomCurve3(pts);
+  for (let i = 1; i < 9; i++) {
+    const hg = new THREE.Group(); hg.position.copy(curve.getPointAt(i / 9));
+    hg.add(rod(V(0, 0, 0), V(0, -0.04, 0), 0.0015, mat('#3a2a20')));
+    const h = pixelArt(SHAPES.heart, { cell: 0.018, colors: { X: i % 2 ? PAL.R : PAL.P } }); h.position.y = -0.13;
+    hg.add(h); st7.group.add(hg);
+    anim(t => { hg.rotation.z = Math.sin(t * 1.6 + i) * 0.07; });
+  }
+}
+
+// 8 — dance floor (reference idea)
+const st8 = part(ST, 'st-floor', '8', 'Sàn ô màu (ý tưởng tham khảo)', `
+  <ul><li>Lấy ý từ ảnh "PARTY": sàn ô màu kiểu disco trước sân khấu. Không bắt buộc.</li>
+  <li><em>Gợi ý:</em> dán giấy màu hoặc decal lên sàn, mỗi ô 50cm.</li>
+  <li>Bật <b>Party</b> để xem hiệu ứng sáng.</li></ul>`,
+  { explode: V(0, 0, 0.8), view: V(0.3, 0.9, 1), anchor: V(1.75, 0.15, 3.75), minDist: 3 });
+{
+  const fc = [PAL.P, PAL.Y, PAL.C, PAL.V, PAL.B, PAL.L];
+  const tiles = [];
+  for (let j = 0; j < 3; j++) for (let i = 0; i < 6; i++) {
+    const c = fc[(i + j * 2) % 6];
+    const m = new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.06, roughness: 0.35 });
+    const tile = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.012, 0.48), m);
+    tile.position.set(-1.25 + i * 0.5, 0.006, 2.5 + j * 0.5); tile.receiveShadow = true;
+    st8.group.add(tile); tiles.push(m);
+  }
+  anim(t => tiles.forEach((m, i) => { m.emissiveIntensity = state.party ? (Math.sin(t * 3.2 + i * 1.9) > 0.25 ? 1.5 : 0.12) : 0.06; }));
+}
+
+// 9 — projection screen for the game
+const st10 = part(ST, 'st-screen', '9', 'Màn hình chiếu (game)', `
+  <ul><li>Màn chiếu cho cả phòng xem game, treo từ trần ở giữa, ngay trước tường sau sân khấu.</li>
+  <li>Mô hình: màn 16:9, ~2,4m × 1,35m (~108"), mép dưới cao ~1m so với sàn.</li>
+  <li><em>Lưu ý:</em> vì sân khấu không có bục, người đứng trước màn sẽ che phần dưới màn với khán giả phía sau. Nên treo màn cao hơn nếu trần cho phép, hoặc để người chơi đứng lệch sang hai bên.</li>
+  <li>Máy chiếu treo trần phía khán giả, cách màn ~3,9m. Vùng sáng mờ là đường chiếu.</li>
+  <li><em>Lưu ý:</em> đèn treo (3a–3c) và dây tim (7) nằm sát đường chiếu, cần kiểm tra thực tế để không đổ bóng lên màn.</li>
+  <li>Bật/tắt bằng nút <b>Màn chiếu</b>. Khi bật, chữ REV26 tự dời lên phía trên màn.</li>
+  <li><em>Kích thước và vị trí là ước lượng; nếu dùng TV/màn LED hoặc màn có sẵn của quán thì cần đo lại.</em></li></ul>`,
+  { explode: V(0, 0, 0.9), view: V(0, 0.08, 1), minDist: 3.4, anchor: V(-1.4, 2.45, 0.4) });
+let screenDim;
+{
+  const SW = 2.4, SH = 1.35, cy = 1.0 + SH / 2, z = 0.36;
+  const cv = document.createElement('canvas'); cv.width = 640; cv.height = 360;
+  const cx = cv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const F = px => `${px}px 'Press Start 2P', monospace`;
+  const shadowText = (txt, x, y, color) => { cx.fillStyle = '#000'; cx.fillText(txt, x + 4, y + 4); cx.fillStyle = color; cx.fillText(txt, x, y); };
+  const drawHeart = (ox, oy, c) => SHAPES.heart.forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === '.') return; cx.fillStyle = ch === 'W' ? '#fff' : c; cx.fillRect(ox + x * c3, oy + y * c3, c3, c3);
+  }));
+  const c3 = 3;
+  const drawScreen = t => {
+    const W = 640, H = 360;
+    cx.fillStyle = '#000181'; cx.fillRect(0, 0, W, H);
+    cx.fillStyle = 'rgba(255,255,255,.35)';
+    for (let i = 0; i < 46; i++) { const x = (i * 97 + t * 18 * ((i % 3) + 1)) % W, y = (i * 53) % H; cx.fillRect(Math.floor(x / 4) * 4, y, 4, 4); }
+    cx.fillStyle = '#7A00BA'; cx.fillRect(0, H - 34, W, 34);
+    cx.fillStyle = '#FCBF06'; for (let i = 0; i < 20; i++) cx.fillRect(((i * 40 - t * 60) % (W + 40) + W + 40) % (W + 40) - 20, H - 22, 10, 10);
+    cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.font = F(64); shadowText('REV26', W / 2, 118, '#FF387F');
+    cx.font = F(22); shadowText("LET'S PLAY", W / 2, 192, '#00FFDB');
+    if (Math.floor(t * 2) % 2 === 0) { cx.font = F(16); shadowText('PRESS START', W / 2, 258, '#ffffff'); }
+    cx.textAlign = 'left'; cx.font = F(12); shadowText('SCORE 2026', 18, 26, '#FCBF06');
+    [0, 1, 2].forEach(i => drawHeart(W - 120 + i * 34, 14, '#e8213a'));
+    tex.needsUpdate = true;
+  };
+  drawScreen(0);
+  let last = -1;
+  anim(t => { const f = Math.floor(t * 6); if (f !== last && st10.group.visible) { last = f; drawScreen(t); } });
+
+  const surf = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  surf.position.set(0, cy, z + 0.006);
+  const border = new THREE.Mesh(new THREE.BoxGeometry(SW + 0.1, SH + 0.1, 0.01), mat('#0b0b0d'));
+  border.position.set(0, cy, z); border.castShadow = true;
+  const roller = rod(V(-SW / 2 - 0.12, cy + SH / 2 + 0.08, z), V(SW / 2 + 0.12, cy + SH / 2 + 0.08, z), 0.035, mat('#e8e8ea', { roughness: 0.4 }));
+  const cables = [-1, 1].map(sx => rod(V(sx * 1.15, 3, z), V(sx * 1.15, cy + SH / 2 + 0.1, z), 0.003, mat('#bbbbbb')));
+  // projector on the ceiling
+  const proj = new THREE.Group(); proj.position.set(0, 2.7, 4.4);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.28), mat('#e9e9ec', { roughness: 0.4 })); body.castShadow = true;
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.04, 20), mat('#222222', { metalness: 0.5, roughness: 0.3 }));
+  lens.rotation.x = Math.PI / 2; lens.position.set(0.08, 0, -0.16);
+  proj.add(body, lens, rod(V(0, 0.06, 0), V(0, 0.3, 0), 0.012, mat('#333333')));
+  // light beam (not clickable)
+  const Lp = V(0.08, 2.7, 4.22), zz = z + 0.008;
+  const c = [V(-SW / 2, cy - SH / 2, zz), V(SW / 2, cy - SH / 2, zz), V(SW / 2, cy + SH / 2, zz), V(-SW / 2, cy + SH / 2, zz)];
+  const tri = []; for (let i = 0; i < 4; i++) tri.push(Lp, c[i], c[(i + 1) % 4]);
+  const beam = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints(tri),
+    new THREE.MeshBasicMaterial({ color: '#cfe0ff', transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  beam.raycast = () => {};
+  st10.group.add(border, surf, roller, ...cables, proj, beam);
+  screenDim = dim(ST, st10.group, V(-SW / 2, 0.92, z + 0.02), V(SW / 2, 0.92, z + 0.02), '≈2,4m × 1,35m (16:9)');
+}
+finalize(ST);
+
+/* ================================================================ AREA 0 — OVERALL (V-shaped plan from the sketch) */
+building = 'overall';
+const S2 = Math.SQRT1_2;
+const dL = V(-S2, 0, -S2), nL = V(S2, 0, -S2);   // left arm: direction toward stage, normal toward the inner side
+const dR = V(S2, 0, -S2), nR = V(-S2, 0, -S2);   // right arm: direction toward photozone, normal toward the inner side
+const WL = 7, WR = 5, SL = 16, SR = 15;          // arm widths / lengths (estimates)
+const atL = (s, n, y = 0) => dL.clone().multiplyScalar(s).addScaledVector(nL, n).setY(y);
+const atR = (s, n, y = 0) => dR.clone().multiplyScalar(s).addScaledVector(nR, n).setY(y);
+const IC = atL(5, WL);                           // inner corner of the V (bar) — equals atR(7, WR)
+const POLY = [atL(2.12, 0), atR(2.12, 0), atR(SR, 0), atR(SR, WR), IC, atL(SL, WL), atL(SL, 0)];
+function inPoly(x, z) {
+  let c = false;
+  for (let i = 0, j = POLY.length - 1; i < POLY.length; j = i++) {
+    const a = POLY[i], b = POLY[j];
+    if (((a.z > z) !== (b.z > z)) && (x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x)) c = !c;
+  }
+  return c;
+}
+const OV = newArea('overall', {
+  title: 'Tổng thể không gian',
+  sub: 'Mặt bằng hình chữ V theo sơ đồ trên bảng: cửa vào ở đáy; nhánh trái là salle và sân khấu; nhánh phải là dãy bàn, ghế cố định và photozone; bar ở góc trong. Tường chung và quầy bar spam element ngẫu nhiên. Kích thước là ước lượng.',
+  cam: { pos: V(6, 19, 8), tgt: V(-0.6, 0, -8.2) },
+  explodeCam: { pos: V(6, 21, 9), tgt: V(-0.6, 0.5, -8.2) },
+  partyCenter: atL(12.5, 3.5, 2.4),
+});
+{
+  const shape = new THREE.Shape(POLY.map(p => new THREE.Vector2(p.x, -p.z)));
+  const floor = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat('#4a3426', { roughness: 0.85, side: THREE.DoubleSide }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+  OV.group.add(floor);
+  const wallM = new THREE.MeshStandardMaterial({ color: '#d9cdbb', roughness: 0.9 });
+  const woodM = new THREE.MeshStandardMaterial({ color: '#6e4a30', roughness: 0.7 });
+  const greyM = new THREE.MeshStandardMaterial({ color: '#8b8f96', roughness: 0.95 });
+  POLY.forEach((a, i) => {
+    const b = POLY[(i + 1) % POLY.length];
+    const d = new THREE.Vector3().subVectors(b, a), len = d.length(), mid = a.clone().lerp(b, 0.5);
+    const n = V(-d.z, 0, d.x).normalize();
+    if (!inPoly(mid.x + n.x * 0.2, mid.z + n.z * 0.2)) n.negate();
+    const ry = Math.atan2(n.x, n.z), grey = i === 2;   // edge 2 = end wall of the right arm = grey photobooth wall
+    const w = new THREE.Mesh(new THREE.PlaneGeometry(len, 3), grey ? greyM : wallM);
+    w.position.set(mid.x, 1.5, mid.z); w.rotation.y = ry; w.receiveShadow = true; OV.group.add(w);
+    if (!grey) {
+      const ws = new THREE.Mesh(new THREE.PlaneGeometry(len, 1), woodM);
+      ws.position.set(mid.x + n.x * 0.004, 0.5, mid.z + n.z * 0.004); ws.rotation.y = ry; ws.receiveShadow = true; OV.group.add(ws);
+    }
+  });
+  OV.group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(POLY.map(p => p.clone().setY(3))),
+    new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.25 })));
+  dim(OV, OV.group, atL(12.6, 0, 0.05), atL(12.6, WL, 0.05), '≈7m');
+  dim(OV, OV.group, atR(6.0, 0, 0.05), atR(6.0, WR, 0.05), '≈5m');
+  dim(OV, OV.group, atL(5, WL - 0.3, 0.05), atL(SL, WL - 0.3, 0.05), '≈11m');
+  dim(OV, OV.group, atR(7, 3.9, 0.05), atR(SR, 3.9, 0.05), '≈8m');
+  dim(OV, OV.group, V(-1.5, 0.05, -1.75), V(1.5, 0.05, -1.75), '≈3m');
+}
+
+// 1 — entrance + check-in gate
+const ov1 = part(OV, 'ov-door', '1', 'Cửa vào & cổng check-in', `
+  <ul><li>Cửa vào ở đáy chữ V, theo sơ đồ.</li>
+  <li>Bảng có ghi "Cổng check-in" nhưng chưa có thiết kế. Mô hình dựng tạm một cổng pixel ngay sau cửa, có chữ <b>CHECK IN</b> và element cùng bộ. <em>(gợi ý)</em></li>
+  <li><em>Ước lượng: cửa ~1,6m; cổng ~2,4m × 2,8m.</em></li></ul>`,
+  { view: V(0, 0.45, 1), minDist: 4.5 });
+{
+  const g = ov1.group;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.3, 0.04), mat('#1c1511')); frame.position.set(0, 1.15, -1.52);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.2, 0.06), mat('#3b2a1e', { roughness: 0.5 })); door.position.set(0, 1.1, -1.54);
+  const split = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 0.07), mat('#111111')); split.position.set(0, 1.1, -1.545);
+  const rug = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.012, 0.8), mat(PAL.V, { roughness: 0.9 })); rug.position.set(0, 0.006, -2.0);
+  g.add(frame, door, split, rug);
+  const gm = mat(PAL.N, { roughness: 0.5 }), gz = -2.55;
+  for (const x of [-1.1, 1.1]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.5, 0.25), gm); pl.position.set(x, 1.25, gz); pl.castShadow = true; g.add(pl); }
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.36, 0.25), gm); beam.position.set(0, 2.68, gz); beam.castShadow = true; g.add(beam);
+  const txt = pixelText('CHECK IN', ['Y', 'P', 'C', 'Y', 'P', 'C', 'Y'], 0.03); txt.position.set(0, 2.68, gz + 0.126); g.add(txt);
+  [[-1.1, 1.75, 'heart', { X: PAL.R }, 0.02], [1.1, 1.75, 'star', { X: PAL.Y }, 0.014], [-1.1, 0.95, 'coin', {}, 0.022], [1.1, 0.95, 'ghost', { X: PAL.P }, 0.014]]
+    .forEach(([x, y, sh, c, cell]) => { const o = pixelArt(SHAPES[sh], { cell, colors: c }); o.position.set(x, y, gz + 0.126); g.add(o); });
+}
+
+// 2 — check-in table + mailbox for next year
+const ov2 = part(OV, 'ov-checkin', '2', 'Bàn check-in & thùng thư năm sau', `
+  <ul><li>Bàn check-in ở đầu nhánh phải, ngay cạnh cửa, theo sơ đồ.</li>
+  <li>Trên bàn có thùng thư theo mục "Check-in và thùng thư cho năm sau" trong danh sách trang trí.</li>
+  <li><em>Gợi ý:</em> nối với ý tưởng "A Letter to My Future Self" của Hân: khách viết thư lúc check-in rồi mở vào Reveillon 2027.</li></ul>`,
+  { view: V(-0.2, 0.8, 1), minDist: 3 });
+{
+  const g = new THREE.Group(); g.position.copy(atR(4.0, 0.7)); g.rotation.y = -3 * Math.PI / 4; ov2.group.add(g);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.72, 0.65), mat(PAL.N)); body.position.y = 0.36; body.castShadow = true;
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.04, 0.7), mat('#f4f4f2')); top.position.y = 0.74;
+  const book = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.22), mat('#ffffff')); book.position.set(-0.35, 0.775, 0.05);
+  const mb = new THREE.Group(); mb.position.set(0.45, 0.76, 0);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.28), mat(PAL.P)); box.position.y = 0.16; box.castShadow = true;
+  const slot = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.01, 0.03), mat('#111111')); slot.position.y = 0.322;
+  const yr = pixelText('2027', ['W', 'W', 'W', 'W'], 0.011); yr.position.set(0, 0.16, 0.141);
+  mb.add(box, slot, yr);
+  g.add(body, top, book, mb);
+}
+
+// 3 — bar at the inner corner
+const ov3 = part(OV, 'ov-bar', '3', 'Quầy bar', `
+  <ul><li>Quầy bar ở góc trong của chữ V, đối diện cửa vào, nối hai nhánh. Vị trí theo sơ đồ.</li>
+  <li>Mô hình vẽ quầy cong, có dải đèn hồng. Hình dáng và kích thước thật cần xem lại.</li>
+  <li>Mặt quầy spam element cùng bộ, xem mục 12.</li></ul>`,
+  { view: V(0, 0.9, 1), minDist: 5 });
+{
+  const ring = (r1, r2, a0, a1, N = 28) => {
+    const sh = new THREE.Shape();
+    for (let i = 0; i <= N; i++) { const a = a0 + (a1 - a0) * i / N; const x = Math.sin(a) * r2, y = -Math.cos(a) * r2; i ? sh.lineTo(x, y) : sh.moveTo(x, y); }
+    for (let i = N; i >= 0; i--) { const a = a0 + (a1 - a0) * i / N; sh.lineTo(Math.sin(a) * r1, -Math.cos(a) * r1); }
+    return sh;
+  };
+  const mk = (sh, depth, m, y) => {
+    const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false }); geo.rotateX(-Math.PI / 2);
+    const me = new THREE.Mesh(geo, m); me.position.set(IC.x, y, IC.z); me.castShadow = true; me.receiveShadow = true; return me;
+  };
+  const A0 = -Math.PI / 3, A1 = Math.PI / 3;
+  ov3.group.add(
+    mk(ring(1.75, 2.3, A0, A1), 1.02, mat('#3a2a20', { roughness: 0.6 }), 0),
+    mk(ring(1.68, 2.4, A0 - 0.03, A1 + 0.03), 0.05, mat('#1b1b20', { roughness: 0.3, metalness: 0.3 }), 1.02),
+    mk(ring(2.3, 2.315, A0, A1), 0.03, new THREE.MeshStandardMaterial({ color: PAL.P, emissive: PAL.P, emissiveIntensity: 1.2 }), 0.12));
+  for (const a of [-0.8, -0.3, 0.3, 0.8]) {
+    const x = IC.x + Math.sin(a) * 2.75, z = IC.z + Math.cos(a) * 2.75;
+    const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 16), mat('#222222')); seat.position.set(x, 0.75, z); seat.castShadow = true;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.75, 8), mat('#888888', { metalness: 0.6 })); leg.position.set(x, 0.375, z);
+    ov3.group.add(seat, leg);
+  }
+}
+
+// 4 — storage room (inner side of the left arm, next to the bar)
+const ov4 = part(OV, 'ov-store', '4', 'Phòng cất bàn ghế + đồ', `
+  <ul><li>Ghi chú trên sơ đồ: "cất bàn ghế + đồ của mình vào đây".</li>
+  <li>Nằm ở cạnh trong của nhánh trái, sát quầy bar, không nằm cạnh sân khấu.</li>
+  <li>Mô hình vẽ phòng trong suốt để thấy bàn ghế xếp bên trong. Kích thước phòng là ước lượng.</li></ul>`,
+  { view: V(-S2, 0.9, S2), minDist: 5 });
+{
+  const ry = 3 * Math.PI / 4;
+  const dc = IC.clone().addScaledVector(dL, 2.0);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.05), mat('#5b3b26', { roughness: 0.6 }));
+  door.position.copy(dc).addScaledVector(nL, -0.03).setY(1.05); door.rotation.y = ry;
+  const fr = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.18, 0.03), mat('#2e1f14'));
+  fr.position.copy(dc).addScaledVector(nL, -0.015).setY(1.09); fr.rotation.y = ry;
+  const sign = pixelText('KHO', ['Y', 'Y', 'Y'], 0.02);
+  sign.position.copy(dc).addScaledVector(nL, -0.03).setY(2.38); sign.rotation.y = ry + Math.PI;
+  const rc = IC.clone().addScaledVector(dL, 2.1).addScaledVector(nL, 1.3);
+  const vol = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 2.5), new THREE.MeshStandardMaterial({ color: PAL.S, transparent: true, opacity: 0.16, depthWrite: false }));
+  vol.position.copy(rc).setY(1.5); vol.rotation.y = ry;
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(vol.geometry), new THREE.LineBasicMaterial({ color: PAL.S, transparent: true, opacity: 0.7 }));
+  edges.position.copy(vol.position); edges.rotation.y = ry;
+  ov4.group.add(door, fr, sign, vol, edges);
+  for (let i = 0; i < 8; i++) {
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), mat(i % 2 ? '#8a6a4a' : '#6b4a30'));
+    c.position.copy(rc).addScaledVector(dL, -0.9 + (i % 4) * 0.55).addScaledVector(nL, i < 4 ? -0.4 : 0.5).setY(0.225 + (i % 3 === 0 ? 0.45 : 0));
+    c.rotation.y = ry; c.castShadow = true; ov4.group.add(c);
+  }
+}
+
+// 5 — standing areas
+const ov5 = part(OV, 'ov-salle', '5', 'Khu salle (đứng + di chuyển)', `
+  <ul><li>Sơ đồ có hai vùng "khu vực salle để đứng + di chuyển": phần lớn nhánh trái (trước sân khấu) và lối giữa nhánh phải (giữa dãy bàn và dãy ghế).</li>
+  <li>Người mẫu chỉ để thấy mật độ. Ẩn/hiện bằng nút <b>Người (tỉ lệ)</b>.</li></ul>`,
+  { anchor: atL(8, 3.5, 2.2), view: V(0.3, 1.2, 1), minDist: 9 });
+{
+  const zone = pts => {
+    const m = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([pts[0], pts[1], pts[2], pts[0], pts[2], pts[3]]),
+      new THREE.MeshBasicMaterial({ color: PAL.C, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide }));
+    const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: PAL.C, dashSize: 0.25, gapSize: 0.15 }));
+    line.computeLineDistances();
+    ov5.group.add(m, line);
+  };
+  zone([atL(5.3, 0.3, 0.012), atL(10.8, 0.3, 0.012), atL(10.8, 6.7, 0.012), atL(5.3, 6.7, 0.012)]);
+  zone([atR(7.4, 0.8, 0.012), atR(12.9, 0.8, 0.012), atR(12.9, 4.1, 0.012), atR(7.4, 4.1, 0.012)]);
+  const crowd = new THREE.Group(); ov5.group.add(crowd); OV.peopleGroup = crowd;
+  const spots = [[6, 2], [6.8, 4.5], [7.5, 1.5], [8.6, 3.2], [9.4, 5.6], [10.2, 2.4], [7.9, 6.0], [9.8, 4.2]].map(([s, n]) => atL(s, n))
+    .concat([[8.5, 2.3], [10, 1.6], [11.5, 3.0]].map(([s, n]) => atR(s, n)));
+  spots.forEach(p => { const h = person(1.55 + rand() * 0.25); h.position.copy(p); h.rotation.y = rand() * 6.28; crowd.add(h); });
+}
+
+// 6 — fixed tables along the inner wall of the right arm
+const ov6 = part(OV, 'ov-tables', '6', 'Dãy bàn cố định (để áo khoác)', `
+  <ul><li>Ghi chú trên sơ đồ: "bàn (năm ngoái không chuyển được + để áo khoác)".</li>
+  <li>Dãy bàn dọc tường trong của nhánh phải, từ quầy bar tới gần photozone. Mô hình đặt sẵn áo khoác trên bàn.</li></ul>`,
+  { view: V(S2, 0.9, S2), minDist: 6 });
+{
+  const coatCols = ['#2b2f3a', '#5a2b2b', '#2f4a3a', '#3b3355', '#6b5a3a'];
+  for (let k = 0; k < 4; k++) {
+    const g = new THREE.Group(); g.position.copy(IC.clone().addScaledVector(dR, 0.9 + k * 1.5).addScaledVector(nR, -0.42)); g.rotation.y = Math.PI / 4;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.75), mat('#6b4a30')); top.position.y = 0.74; top.castShadow = true;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.7, 0.6), mat('#3a2a20')); base.position.y = 0.35;
+    g.add(top, base);
+    for (let j = 0; j < 2; j++) {
+      const c = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.45, 4, 10), mat(coatCols[(k * 2 + j) % 5], { roughness: 0.95 }));
+      c.rotation.z = Math.PI / 2; c.scale.z = 0.6; c.position.set(-0.3 + j * 0.55, 0.84, (rand() - 0.5) * 0.2); c.castShadow = true;
+      g.add(c);
+    }
+    ov6.group.add(g);
+  }
+}
+
+// 7 — fixed bench seating along the outer wall of the right arm
+const ov7 = part(OV, 'ov-bench', '7', 'Ghế ngồi cố định', `
+  <ul><li>Ghi chú trên sơ đồ: "ghế ngồi không di chuyển được".</li>
+  <li>Dãy ghế băng dọc tường ngoài của nhánh phải, từ bàn check-in tới gần photozone.</li></ul>`,
+  { view: V(-S2, 0.9, -S2), minDist: 6 });
+{
+  const g = new THREE.Group(); g.position.copy(atR(9.1, 0.26)); g.rotation.y = Math.PI / 4; ov7.group.add(g);
+  const Lb = 8.2;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(Lb, 0.3, 0.42), mat('#3a2a20')); base.position.y = 0.15;
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(Lb, 0.1, 0.48), mat('#7a2430', { roughness: 0.7 })); seat.position.y = 0.35; seat.castShadow = true;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(Lb, 0.5, 0.1), mat('#7a2430', { roughness: 0.7 })); back.position.set(0, 0.65, 0.2); back.castShadow = true;
+  g.add(base, seat, back);
+}
+
+// 8 — stage area (the real stage-tab parts are mounted here when this tab is open)
+const ov8 = part(OV, 'ov-stage', '8', 'Khu sân khấu', `
+  <ul><li>Toàn bộ trang trí của tab <b>② Phía sân khấu</b> nằm ở cuối nhánh trái: chữ REV26, màn chiếu, đèn, element trên tường, trần, dây tim, sàn ô màu.</li>
+  <li>Nút <b>Màn chiếu</b> dùng được ở tab này.</li>
+  <li>Khán giả đứng dọc nhánh trái, nên người đứng gần bar sẽ cách màn chiếu ~10m <em>(ước lượng)</em>.</li>
+  <li>Mở tab ② để xem chi tiết từng phần.</li></ul>`,
+  { anchor: atL(13.2, 3.5, 3.3), view: V(S2, 0.7, S2), minDist: 7 });
+const ovStage = new THREE.Group(); ovStage.position.copy(atL(SL, WL / 2)); ovStage.rotation.y = Math.PI / 4;
+ovStage.userData.ownerPart = ov8; ov8.group.add(ovStage);
+
+// 9 — photozone (the real photobooth-tab parts are mounted here)
+const ov9 = part(OV, 'ov-photo', '9', 'Photozone', `
+  <ul><li>Toàn bộ tab <b>① Photobooth</b> nằm trên bức tường xám ở cuối nhánh phải: rèm kim tuyến, đĩa than, element, khung ảnh.</li>
+  <li><em>Lưu ý:</em> lối tới photozone bị kẹp giữa dãy bàn và dãy ghế cố định (lối đi ~3,5m trong mô hình), nên người chờ chụp sẽ đứng ngay trên lối đi.</li>
+  <li>Mở tab ① để xem chi tiết từng phần.</li></ul>`,
+  { anchor: atR(13.2, 2.5, 3.3), view: V(-S2, 0.7, S2), minDist: 6 });
+const ovPhoto = new THREE.Group(); ovPhoto.position.copy(atR(SR, WR / 2)); ovPhoto.rotation.y = -Math.PI / 4;
+ovPhoto.userData.ownerPart = ov9; ov9.group.add(ovPhoto);
+
+// 10 — pixel strings on the ceiling
+const ov10 = part(OV, 'ov-strings', '10', 'Dây treo pixel trên trần', `
+  <ul><li>Lấy từ ghi chú "Dán dây trên trần nhà" và ý tưởng của Hân cho "A Letter to My Future Self": "vẽ và làm các hình trang trí kiểu pixel rồi làm dây treo".</li>
+  <li>Mô hình: dây ngang trần khu salle, treo phong bì, tim, sao pixel ~15–20cm.</li>
+  <li>Bấm <b>Tách lớp</b> để nhấc dây lên cho dễ nhìn.</li></ul>`,
+  { anchor: atL(8.5, 3.5, 3.25), explode: V(0, 1.0, 0), view: V(0.3, 0.5, 1), minDist: 8 });
+{
+  const items = [['envelope', { X: '#ffffff' }, 0.016], ['heart', { X: PAL.P }, 0.016], ['star', { X: PAL.Y }, 0.012], ['heart', { X: PAL.R }, 0.016]];
+  const strand = (a, b, faceRy, seed) => {
+    const pts = sagPoints(a, b, 0.25, 24);
+    ov10.group.add(stringMesh(pts, '#3a2a20', 0.003));
+    const curve = new THREE.CatmullRomCurve3(pts), n = Math.floor(a.distanceTo(b) / 0.7);
+    for (let i = 1; i < n; i++) {
+      const [sh, col, cell] = items[(i + seed) % items.length];
+      const hg = new THREE.Group(); hg.position.copy(curve.getPointAt(i / n)); hg.rotation.y = faceRy;
+      const el = pixelArt(SHAPES[sh], { cell, colors: col }); el.position.y = -0.04 - el.userData.size.h / 2;
+      hg.add(rod(V(0, 0, 0), V(0, -0.04, 0), 0.0015, mat('#3a2a20')), el);
+      ov10.group.add(hg);
+      const ph = i + seed * 1.7;
+      anim(t => { hg.rotation.z = Math.sin(t * 1.5 + ph) * 0.08; });
+    }
+  };
+  [6.4, 8.4, 10.3].forEach((sv, k) => strand(atL(sv, 0.05, 2.92), atL(sv, WL - 0.05, 2.92), Math.PI / 4, k));
+  [8.6, 11.0].forEach((sv, k) => strand(atR(sv, 0.05, 2.92), atR(sv, WR - 0.05, 2.92), -Math.PI / 4, k + 2));
+}
+// 11 / 12 — random element spam on the common-space walls and on the bar
+const ov11 = part(OV, 'ov-spam', '11', 'Element spam — không gian chung', `
+  <ul><li>Không gian chung được trang trí bằng cách dán ngẫu nhiên (spam) các element cùng concept, cùng style pixel lên tường: tim, Pac-Man, ma, sao, tay cầm game, đồng xu, play/pause, phong bì, và chữ GAME OVER / NEXT LEVEL / LEVEL UP / LET'S PLAY / REV26.</li>
+  <li>Element 30–50cm, dán ở phần tường phía trên lớp gỗ (~1,2–2,8m) để bàn ghế và người không che mất.</li>
+  <li>Không dán lên cửa kho, khu sân khấu và tường photozone, vì hai khu này đã có thiết kế riêng.</li>
+  <li>Mô hình đang có <b class="spamCount" data-k="wall">…</b> element trên tường. Vị trí hoàn toàn ngẫu nhiên.</li></ul>
+  <button class="mini" data-act="reshuffle">Xáo ngẫu nhiên lại</button>`,
+  { anchor: atL(8, 0.1, 2.95), view: V(0.3, 1.2, 1), minDist: 10 });
+const ov12 = part(OV, 'ov-barspam', '12', 'Element spam — quầy bar', `
+  <ul><li>Mặt trước quầy bar cũng spam element cùng bộ, cỡ nhỏ hơn (~15–25cm) cho vừa mặt quầy cao ~1m.</li>
+  <li>Mô hình đang có <b class="spamCount" data-k="bar">…</b> element trên quầy. Vị trí hoàn toàn ngẫu nhiên.</li></ul>
+  <button class="mini" data-act="reshuffle">Xáo ngẫu nhiên lại</button>`,
+  { anchor: V(IC.x, 1.45, IC.z + 2.3), view: V(0, 0.45, 1), minDist: 3.6 });
+const spamWallG = new THREE.Group(), spamBarG = new THREE.Group();
+ov11.group.add(spamWallG); ov12.group.add(spamBarG);
+const spamCount = { wall: 0, bar: 0 };
+let spamSeed = 2026;
+const inwardNormal = (a, b) => {
+  const d = new THREE.Vector3().subVectors(b, a), mid = a.clone().lerp(b, 0.5);
+  const n = V(-d.z, 0, d.x).normalize();
+  if (!inPoly(mid.x + n.x * 0.2, mid.z + n.z * 0.2)) n.negate();
+  return n;
+};
+// wall stretches that belong to the common space (u = metres along the wall from a)
+const SPAM_WALLS = [
+  { a: POLY[1], b: POLY[2], from: 0.5, to: 12.2 },                     // right arm, outer wall (above the benches)
+  { a: POLY[3], b: POLY[4], from: 0.4, to: 7.6 },                      // right arm, inner wall (above the tables)
+  { a: POLY[4], b: POLY[5], from: 0.3, to: 5.8, skip: [[1.1, 2.9]] },  // left arm, inner wall (skip the storage door)
+  { a: POLY[6], b: POLY[0], from: 5.2, to: 13.6 },                     // left arm, outer wall (stops before the stage)
+].map(W => ({ ...W, n: inwardNormal(W.a, W.b) }));
+const disposeEl = el => el.traverse(o => { if (o.isInstancedMesh) o.dispose(); });
+function updateSpamCount() { document.querySelectorAll('.spamCount').forEach(el => { el.textContent = spamCount[el.dataset.k]; }); }
+function buildSpam(seed) {
+  const r = mulberry32(seed);
+  const pick = arr => arr[Math.floor(r() * arr.length)];
+  for (const g of [spamWallG, spamBarG]) for (const c of [...g.children]) { disposeEl(c); g.remove(c); }
+  const SP = [['heart', { X: PAL.R }], ['heart', { X: PAL.P }], ['pacman', {}], ['ghost', { X: PAL.R }], ['ghost', { X: PAL.P }],
+    ['ghost', { X: PAL.C }], ['ghost', { X: PAL.O }], ['star', { X: PAL.Y }], ['controller', {}], ['coin', {}],
+    ['play', { X: PAL.C }], ['pause', { X: PAL.V }], ['envelope', { X: '#ffffff' }]];
+  const TXT = [['GAME OVER', ['R']], ['NEXT LEVEL', ['Y', 'P', 'C', 'B', 'V', 'O', 'L']], ['LEVEL UP', ['L', 'Y']],
+    ["LET'S PLAY", ['P', 'Y', 'C', 'B', 'V', 'O', 'L']], ['REV26', ['P', 'Y', 'C', 'B', 'V']]];
+  const makeEl = (minS, maxS, allowText) => {
+    if (allowText && r() < 0.15) { const [str, keys] = pick(TXT); return pixelText(str, keys, 0.016 + r() * 0.006); }
+    const [sh, colors] = pick(SP);
+    return pixelArt(SHAPES[sh], { cell: (minS + r() * (maxS - minS)) / (SHAPES[sh][0].length + 2), colors });
+  };
+  const hit = (list, u, y, hw, hh) => list.some(q => Math.abs(q.u - u) < q.hw + hw + 0.1 && Math.abs(q.y - y) < q.hh + hh + 0.1);
+  let nw = 0, nb = 0;
+  for (const W of SPAM_WALLS) {
+    const dir = new THREE.Vector3().subVectors(W.b, W.a).normalize(), ry = Math.atan2(W.n.x, W.n.z);
+    const placed = [], target = Math.round((W.to - W.from) * 1.3);
+    for (let tries = 0; placed.length < target && tries < target * 40; tries++) {
+      const el = makeEl(0.3, 0.5, true), { w, h } = el.userData.size;
+      const hw = w / 2 + 0.03, hh = h / 2 + 0.03;
+      const u = W.from + hw + r() * Math.max(0, W.to - W.from - 2 * hw);
+      const y = 1.2 + hh + r() * Math.max(0, 1.6 - 2 * hh);
+      if ((W.skip && W.skip.some(([a, b]) => u + hw > a && u - hw < b)) || hit(placed, u, y, hw, hh)) { disposeEl(el); continue; }
+      placed.push({ u, y, hw, hh });
+      el.position.copy(W.a).addScaledVector(dir, u).addScaledVector(W.n, 0.004).setY(y);
+      el.rotation.y = ry; el.rotation.z = (r() - 0.5) * 0.5;
+      spamWallG.add(el); nw++;
+    }
+  }
+  const R = 2.304, A0 = -Math.PI / 3 + 0.06, A1 = Math.PI / 3 - 0.06, arc = (A1 - A0) * R, placed = [];
+  for (let tries = 0; placed.length < 16 && tries < 600; tries++) {
+    const el = makeEl(0.15, 0.25, false), { w, h } = el.userData.size;
+    const hw = w / 2 + 0.02, hh = h / 2 + 0.02;
+    const u = hw + r() * Math.max(0, arc - 2 * hw), y = 0.17 + hh + r() * Math.max(0, 0.83 - 2 * hh);
+    if (hit(placed, u, y, hw, hh)) { disposeEl(el); continue; }
+    placed.push({ u, y, hw, hh });
+    const phi = A0 + u / R;
+    el.position.set(IC.x + Math.sin(phi) * R, y, IC.z + Math.cos(phi) * R);
+    el.rotation.y = phi; el.rotation.z = (r() - 0.5) * 0.4;
+    spamBarG.add(el); nb++;
+  }
+  spamWallG.traverse(o => { if (o.isMesh) o.userData.part = ov11; });
+  spamBarG.traverse(o => { if (o.isMesh) o.userData.part = ov12; });
+  spamCount.wall = nw; spamCount.bar = nb;
+  updateSpamCount();
+}
+buildSpam(spamSeed);
+finalize(OV);
+
+// Mount the real stage / photobooth parts into the overall plan when that tab is open
+const MOUNTS = [[ovStage, ST.parts], [ovPhoto, PB.parts.filter(p => p.id !== 'pb-wall')]];
+let mounted = false;
+function setMounted(on) {
+  if (on === mounted) return;
+  mounted = on;
+  for (const [anchor, parts] of MOUNTS) for (const p of parts) {
+    (on ? anchor : p.area.group).add(p.group);
+    p.labelObj.visible = !on;
+  }
+}
+const partOf = o => {
+  if (state.area === 'overall') for (let q = o; q; q = q.parent) if (q.userData.ownerPart) return q.userData.ownerPart;
+  return o.userData.part;
+};
+
+/* ---------------------------------------------------------------- selection & camera */
+const selBox = new THREE.Box3();
+const selHelper = new THREE.Box3Helper(selBox, 0xFCBF06);
+selHelper.material.depthTest = false; selHelper.material.transparent = true; selHelper.renderOrder = 999;
+selHelper.visible = false; scene.add(selHelper);
+let selected = null;
+let fly = null;
+const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+function flyTo(pos, tgt, dur = 0.9) {
+  fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: tgt.clone(), s: performance.now(), dur: dur * 1000 };
+}
+function focusPart(p) {
+  scene.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(p.group);
+  const c = b.getCenter(new THREE.Vector3());
+  const d = Math.max(p.minDist, b.getSize(new THREE.Vector3()).length() * 0.8);
+  flyTo(c.clone().addScaledVector(p.view, d), c);
+}
+function select(p, fly = true) {
+  if (p && p.id === 'st-screen' && !state.screen) setScreen(true);
+  selected = p || null;
+  document.querySelectorAll('#partList > li').forEach(li => li.classList.toggle('sel', !!p && li.dataset.id === p.id));
+  document.querySelectorAll('.hs').forEach(h => h.classList.remove('sel'));
+  selHelper.visible = !!p;
+  if (!p) return;
+  p.label.classList.add('sel');
+  if (fly) focusPart(p);
+  const li = document.querySelector(`#partList > li[data-id="${p.id}"]`);
+  li && li.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+/* ---------------------------------------------------------------- UI */
+const $ = s => document.querySelector(s);
+$('#palette').innerHTML = BOARD_PALETTE.map(c => `<div class="sw" style="background:${c}" title="${c}"></div>`).join('');
+
+function renderList(area) {
+  $('#areaTitle').textContent = area.title;
+  $('#areaSub').textContent = area.sub;
+  const parts = [...area.parts].sort((a, b) => a.num.localeCompare(b.num, undefined, { numeric: true }));
+  $('#partList').innerHTML = parts.map(p => `<li data-id="${p.id}"><button class="pi"><span class="num">${p.num}</span><span>${p.title}</span></button><div class="desc">${p.desc}</div></li>`).join('');
+  $('#partList').querySelectorAll('.pi').forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.parentElement.dataset.id;
+    const p = area.parts.find(q => q.id === id);
+    if (selected === p) select(null); else select(p);
+  }));
+  updateSpamCount();
+}
+$('#partList').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  if (b.dataset.act === 'reshuffle') { buildSpam(++spamSeed); return; }
+  const white = frameMat.color.getHexString() === 'f3f3f0';
+  frameMat.color.set(white ? '#17171a' : '#f3f3f0');
+});
+
+function applyToggles() {
+  for (const a of Object.values(areas)) {
+    a.dims.forEach(d => d.visible = state.dims && (state.area !== 'overall' || a.key === 'overall'));
+    if (a.peoplePart) a.peoplePart.group.visible = state.people;
+    if (a.peopleGroup) a.peopleGroup.visible = state.people;
+  }
+}
+function showArea(key) {
+  state.area = key;
+  setMounted(key === 'overall');
+  const big = key === 'overall', sc = big ? V(-0.5, 0, -8.5) : V(0, 1, 1.5), r = big ? 14 : 6;
+  sun.target.position.copy(sc); sun.position.copy(sc).add(V(3, 7, 7).multiplyScalar(big ? 2 : 1));
+  Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r, far: big ? 60 : 25 });
+  sun.shadow.camera.updateProjectionMatrix();
+  for (const a of Object.values(areas)) a.group.visible = a.key === key;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.area === key));
+  $('#bScreen').style.display = key === 'photobooth' ? 'none' : '';
+  const a = areas[key];
+  renderList(a);
+  select(null);
+  const c = state.explode ? a.explodeCam : a.cam;
+  if (camera.position.lengthSq() === 0) { camera.position.copy(c.pos); controls.target.copy(c.tgt); }
+  else flyTo(c.pos, c.tgt, 1.0);
+  applyToggles();
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => showArea(b.dataset.area)));
+
+const toggleBtn = (id, fn) => { const b = $(id); b.addEventListener('click', () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); fn(on); }); };
+toggleBtn('#bExplode', on => { state.explode = on; const a = areas[state.area]; const c = on ? a.explodeCam : a.cam; select(null); flyTo(c.pos, c.tgt, 1.1); });
+toggleBtn('#bDims', on => { state.dims = on; applyToggles(); });
+toggleBtn('#bPeople', on => { state.people = on; applyToggles(); });
+toggleBtn('#bParty', on => setParty(on));
+toggleBtn('#bScreen', on => setScreen(on));
+toggleBtn('#bRotate', on => { controls.autoRotate = on; });
+$('#bReset').addEventListener('click', () => { const a = areas[state.area]; const c = state.explode ? a.explodeCam : a.cam; select(null); flyTo(c.pos, c.tgt); });
+
+function setScreen(on, snap = false) {
+  state.screen = on;
+  if (snap) { revHolder.position.y = on ? 2.66 : 2.0; revHolder.scale.setScalar(on ? 0.75 : 1); }
+  st10.group.visible = on;
+  $('#bScreen').classList.toggle('on', on);
+  if (revDimLabel) revDimLabel.textContent = on ? '≈1,25m' : '≈1,65m';
+  if (!on && selected === st10) select(null);
+}
+function setParty(on) {
+  state.party = on;
+  hemi.intensity = on ? 0.12 : 0.7;
+  sun.intensity = on ? 0.2 : 1.6;
+  scene.environmentIntensity = on ? 0.35 : 0.7;
+  scene.background.set(on ? '#06060c' : '#14172a');
+  partyLights.forEach(l => l.intensity = on ? 9 : 0);
+  bulbMat.emissiveIntensity = on ? 3 : 1.6;
+}
+
+/* picking */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let down = null;
+renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down) return;
+  const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); down = null;
+  if (moved > 5) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const area = areas[state.area];
+  const shown = o => { for (let q = o; q; q = q.parent) if (!q.visible) return false; return true; };
+  const hit = ray.intersectObjects(area.parts.map(p => p.group), true).find(h => h.object.userData.part && shown(h.object));
+  if (hit) select(partOf(hit.object)); else select(null);
+});
+
+/* layout */
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h); labelRenderer.setSize(w, h);
+  camera.aspect = w / h;
+  if (w > 900) camera.setViewOffset(w, h, -180, 0, w, h); else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+/* ---------------------------------------------------------------- loop */
+const clock = new THREE.Clock();
+function loop() {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  const area = areas[state.area];
+  const k = 1 - Math.exp(-dt * 5);
+  const live = a => a === state.area || state.area === 'overall';
+  for (const p of area.parts) p.group.position.lerp(state.explode ? p.explode : ZERO, k);
+  if (mounted) for (const [, parts] of MOUNTS) for (const p of parts) p.group.position.lerp(ZERO, k);
+  for (const s of swayers) if (live(s.area)) s.update(t);
+  for (const a of animators) if (live(a.area)) a.fn(t, dt);
+  if (state.party) {
+    const c = area.partyCenter;
+    partyLights.forEach((l, i) => l.position.set(c.x + Math.cos(t * 0.7 + i * 2.1) * 2, c.y, c.z + Math.sin(t * 0.7 + i * 2.1) * 1.5));
+  }
+  if (fly) {
+    const kk = Math.min(1, (performance.now() - fly.s) / fly.dur), e = ease(kk);
+    camera.position.lerpVectors(fly.p0, fly.p1, e);
+    controls.target.lerpVectors(fly.t0, fly.t1, e);
+    if (kk === 1) fly = null;
+  }
+  if (selected) selBox.setFromObject(selected.group);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+camera.position.set(0, 0, 0);
+const params = new URLSearchParams(location.hash.slice(1));
+if (params.has('explode')) { state.explode = true; $('#bExplode').classList.add('on'); }
+setScreen(!params.has('noscreen'), true);
+if (params.has('party')) { $('#bParty').classList.add('on'); setParty(true); }
+showArea(params.has('stage') ? 'stage' : params.has('photobooth') ? 'photobooth' : 'overall');
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => history.replaceState(null, '', b.dataset.area === 'overall' ? '#' : '#' + b.dataset.area)));
+document.getElementById('loading').remove();
+loop();
+</script>
+</body>
+</html>
