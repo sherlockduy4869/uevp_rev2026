@@ -507,11 +507,12 @@ function badge(text, keys, cell, plate) {
   p.position.z = -0.004; p.castShadow = true;
   t.position.z = 0.001;
   g.add(p, t);
+  g.userData.size = { w: w + cell * 2, h: h + cell * 2 };
   return g;
 }
 
 /* ---------------------------------------------------------------- decor builders */
-function tinsel(points, height, color, width = 0.012) {
+function tinsel(points, height, color, width = 0.012, sway = 1) {
   const geo = new THREE.PlaneGeometry(width, height); geo.translate(0, -height / 2, 0);
   const m = new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: 0.25, side: THREE.DoubleSide });
   const im = new THREE.InstancedMesh(geo, m, points.length);
@@ -521,7 +522,7 @@ function tinsel(points, height, color, width = 0.012) {
     for (let i = 0; i < d.length; i++) {
       const q = d[i];
       o.position.set(q.x, 0, q.z);
-      o.rotation.set(Math.sin(t * 1.4 + q.ph) * 0.025, q.ry + Math.sin(t * 0.8 + q.ph) * 0.5, Math.sin(t * 1.1 + q.ph) * 0.02);
+      o.rotation.set(Math.sin(t * 1.4 + q.ph) * 0.025 * sway, q.ry + Math.sin(t * 0.8 + q.ph) * 0.5, Math.sin(t * 1.1 + q.ph) * 0.02 * sway);
       o.scale.set(1, q.s, 1);
       o.updateMatrix();
       im.setMatrixAt(i, o.matrix);
@@ -651,8 +652,8 @@ function finalize(area) {
 building = 'photobooth';
 const PB = newArea('photobooth', {
   title: 'Photobooth (Bức tường xám)',
-  sub: 'Dùng tường xám có sẵn làm nền, phủ rèm kim tuyến và element pixel. Phía trước là khung ảnh cầm tay cho 3–4 người.',
-  cam: { pos: V(2.6, 1.9, 5.4), tgt: V(0, 1.3, 0.7) },
+  sub: 'Nền là tường xám có sẵn. Tua rua dán thẳng lên tường ngay sau lưng người chụp, xung quanh là một bộ element pixel retro sắp đặt gọn, cùng tone màu. Phía trước là khung ảnh trắng cầm tay (hoặc đặt trên tripod) cho 3–4 người.',
+  cam: { pos: V(2.6, 1.9, 5.6), tgt: V(0, 1.35, 0.7) },
   explodeCam: { pos: V(6.2, 2.8, 4.6), tgt: V(0, 1.3, 1.5) },
   partyCenter: V(0, 2.3, 1.8),
 });
@@ -663,10 +664,10 @@ const PB = newArea('photobooth', {
 }
 
 // 1 — wall
-const pb1 = part(PB, 'pb-wall', '1', 'Bức tường xám (nền có sẵn)', `
-  <ul><li>Dùng luôn bức tường xám trong quán làm nền, không cần dựng vách riêng. Mọi thứ dán thẳng lên tường.</li>
+const pb1 = part(PB, 'pb-wall', '1', 'Nền xám (dùng tường có sẵn)', `
+  <ul><li>Mô tả trên bảng: "Nền xám (dùng tường)". Không dựng vách riêng, mọi thứ dán thẳng lên tường.</li>
   <li>Mô hình: tường ~5m × 2,8m <em>(ước lượng, cần đo thực tế)</em>.</li>
-  <li>Các lớp từ tường ra ngoài: tường → element → rèm kim tuyến → đĩa than → người → khung ảnh. Bấm <b>Tách lớp</b> để xem riêng từng lớp.</li></ul>`,
+  <li>Các lớp từ tường ra ngoài: tường → tua rua → element → người → khung ảnh. Bấm <b>Tách lớp</b> để xem riêng từng lớp.</li></ul>`,
   { anchor: V(-2.35, 0.25, 0.06), view: V(0.3, 0.2, 1) });
 {
   const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 2.8, 0.12), new THREE.MeshStandardMaterial({ color: '#8b8f96', roughness: 0.95 }));
@@ -677,122 +678,147 @@ const pb1 = part(PB, 'pb-wall', '1', 'Bức tường xám (nền có sẵn)', `
   dim(PB, pb1.group, V(-2.5, 2.92, 0.02), V(2.5, 2.92, 0.02), '≈5m (ước lượng)');
 }
 
-// 4 — pixel elements on the wall
-const pb4 = part(PB, 'pb-elem', '4', 'Element pixel dán kín tường', `
-  <ul><li>Dán kín tường quanh rèm bằng element cùng tone màu: trái tim, Pac-Man, ma, tay cầm game, đồng xu, nút play/pause, ngôi sao.</li>
-  <li>Style pixel đơn giản, lưới 15×15–20×20 ô, mỗi ô 2–3cm, nên mỗi element to <b>30–50cm</b>.</li>
-  <li>Ngôi sao gương: ghép từ ô giấy bạc/gương như ảnh tham khảo.</li></ul>`,
-  { anchor: V(1.85, 2.4, 0.06), explode: V(0, 0, 0.3), view: V(0.25, 0.15, 1) });
+// 2 — tinsel taped straight onto the wall: one glittering block behind the people
+const pb2 = part(PB, 'pb-tinsel', '2', 'Tua rua dán thẳng lên tường', `
+  <ul><li>Mô tả trên bảng: "tua rua dán thẳng lên tường". Không cần thanh treo: dán mép trên của tua rua thẳng lên tường, thả xuôi thành dải.</li>
+  <li>Chỉ dán ở <b>giữa tường, ngay sau lưng người chụp</b> (4 dải × 50cm, sát nhau thành một mảng ~2,3m × 1,7m). Hai bên để trống nền xám cho element nổi bật, ảnh nhìn gọn và sang hơn.</li>
+  <li>Mép trên tua rua thấp hơn hàng tiêu đề REV26 nên hai thứ không đè lên nhau.</li>
+  <li><em>Gợi ý:</em> dán mép trên bằng băng dính giấy để không hỏng tường; chặn thêm vài điểm ở giữa dải cho tua rua nằm sát tường.</li></ul>`,
+  { explode: V(0, 0, 0.3), anchor: V(-0.9, 2.3, 0.05), view: V(0.2, 0.1, 1) });
 {
-  const E = (shape, cell, colors, x, y, rz = 0) => { const o = pixelArt(SHAPES[shape], { cell, colors }); o.position.set(x, y, 0.002); o.rotation.z = rz; return o; };
-  pb4.group.add(
-    E('heart', 0.03, { X: PAL.R }, -2.0, 2.25, 0.12),
-    E('pacman', 0.026, {}, -1.55, 1.65, -0.08),
-    E('ghost', 0.024, { X: PAL.P }, -2.15, 1.15, 0.1),
-    E('controller', 0.025, {}, -1.7, 0.62, -0.12),
-    E('coin', 0.03, {}, -2.25, 0.45, 0.2),
-    E('play', 0.026, { X: PAL.C }, -1.5, 2.5, -0.1),
-    E('star', 0.032, { X: 'mirror' }, 1.8, 1.95, 0.1),
-    E('ghost', 0.024, { X: PAL.C }, 2.2, 1.05, -0.12),
-    E('heart', 0.028, { X: PAL.P }, 1.55, 1.15, -0.15),
-    E('pause', 0.026, { X: PAL.V }, 2.25, 2.5, 0.12),
-    E('coin', 0.028, {}, 1.5, 0.5, -0.2),
-    E('ghost', 0.022, { X: PAL.O }, 2.25, 0.45, 0.08),
-  );
-  dim(PB, pb4.group, V(-2.17, 1.97, 0.03), V(-1.83, 1.97, 0.03), '≈33cm');
+  const tape = mat('#e8dcbc', { roughness: 0.9 });
+  const TOP = 2.2;
+  [[-0.87, 1.66], [-0.29, 1.72], [0.29, 1.68], [0.87, 1.7]].forEach(([x, len]) => {
+    const pts = [];
+    for (let i = 0; i < 130; i++) pts.push({ x: x - 0.27 + rand() * 0.54, z: 0.012 + rand() * 0.016 });
+    const t = tinsel(pts, len, '#d7dbe2', 0.012, 0.25);
+    t.position.set(0, TOP, 0);
+    const tp = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.05, 0.004), tape);
+    tp.position.set(x, TOP, 0.032);
+    pb2.group.add(t, tp);
+  });
+  dim(PB, pb2.group, V(-1.15, 0.38, 0.06), V(1.15, 0.38, 0.06), '≈2,3m');
+  dim(PB, pb2.group, V(-1.3, TOP, 0.06), V(-1.3, TOP - 1.7, 0.06), '≈1,7m');
 }
 
-// 2 — tinsel curtain
-const pb2 = part(PB, 'pb-curtain', '2', 'Rèm kim tuyến bạc', `
-  <ul><li>Theo ảnh tham khảo (1): thả rèm kim tuyến làm nền. Ghi chú trên bảng: "thả xuôi theo tường thành dải là oki".</li>
-  <li>Mô hình: ~2,4m × 2,2m, 2 lớp cho dày.</li>
-  <li><em>Gợi ý:</em> mua rèm 1m × 2m, ghép 2–3 tấm; dán mép trên bằng băng dính giấy để không hỏng tường.</li></ul>`,
-  { explode: V(0, 0, 0.65), view: V(0.2, 0.1, 1) });
+// 3 — a small, deliberate set of pixel elements in a retro-arcade layout
+const pb3 = part(PB, 'pb-elem', '3', 'Element pixel (bố cục retro arcade)', `
+  <ul><li>Ít element, sắp đặt có chủ đích như poster game 80s thay vì dán kín tường. Mỗi element đều có viền đen dày cho đúng chất pixel.</li>
+  <li><b>Hàng tiêu đề trên cùng:</b> Pac-Man ăn một hàng chấm và một chấm to, ở giữa là chữ <b>REV26</b> (~1,1m), bên phải là 3 con ma quay mặt vào giữa. Đây là điểm nhấn chính, nằm ngay trên đầu người chụp nên luôn lọt khung ảnh.</li>
+  <li><b>Hai bên đối xứng</b> trên nền xám: trái là trái tim hồng to + tay cầm game, phải là ngôi sao gương (kiểu quả cầu disco) + nút play. Mỗi cái ~45–50cm.</li>
+  <li><b>4 tia lấp lánh</b> pixel nhỏ (~22cm) rải quanh để lấp khoảng trống.</li>
+  <li><b>4 sọc ngang</b> vàng, hồng, tím, xanh chạy dọc chân tường, kiểu sọc retro 80s. Dùng giấy màu hoặc băng dính màu bản 5cm.</li>
+  <li>Chỉ dùng màu trong bảng màu bên dưới để cả bức tường cùng một tone.</li>
+  <li>Tổng cộng: 1 Pac-Man, 3 ma, 5 chấm, 1 chữ REV26, 1 trái tim, 1 tay cầm game, 1 ngôi sao gương, 1 nút play, 4 tia lấp lánh, 4 sọc chân tường.</li></ul>`,
+  { explode: V(0, 0, 0.65), anchor: V(-1.85, 1.95, 0.08), view: V(0.25, 0.15, 1) });
 {
-  const pts = [];
-  for (let L = 0; L < 2; L++) for (let i = 0; i < 300; i++) pts.push({ x: -1.2 + rand() * 2.4, z: 0.015 + L * 0.014 + rand() * 0.006 });
-  const cur = tinsel(pts, 2.2, '#d7dbe2');
-  cur.position.set(0, 2.5, 0);
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(2.44, 0.04, 0.02), mat('#c9ced6', { metalness: 0.8, roughness: 0.3 }));
-  bar.position.set(0, 2.5, 0.02);
-  pb2.group.add(cur, bar);
-  dim(PB, pb2.group, V(-1.2, 0.2, 0.06), V(1.2, 0.2, 0.06), '≈2,4m');
-  dim(PB, pb2.group, V(1.3, 0.3, 0.06), V(1.3, 2.5, 0.06), '≈2,2m');
+  const Z = 0.05;
+  const put = (o, x, y, rz = 0) => { o.position.set(x, y, Z); o.rotation.z = rz; pb3.group.add(o); return o; };
+  const mirrorX = rows => rows.map(r => [...r].reverse().join(''));
+  const SPARKLE = ['...X...', '...X...', '..XWX..', 'XXWWWXX', '..XWX..', '...X...', '...X...'];
+
+  // header row: Pac-Man → dots → power pellet → REV26 ← three ghosts
+  const HY = 2.48;
+  put(pixelArt(SHAPES.pacman, { cell: 0.028 }), -2.02, HY);
+  [-1.6, -1.4, -1.2, -1.0].forEach(x => put(pixelArt(['W'], { cell: 0.036 }), x, HY));
+  put(pixelArt(['WW', 'WW'], { cell: 0.036, colors: { W: PAL.Y } }), -0.77, HY);
+  const rev = put(pixelText('REV26', ['P', 'Y', 'C', 'I', 'L'], 0.036, { depth: 0.016 }), 0, HY);
+  const ghostL = mirrorX(SHAPES.ghost);
+  [[0.94, 'P'], [1.44, 'C'], [1.94, 'I']].forEach(([x, k], i) =>
+    put(pixelArt(ghostL, { cell: 0.026, colors: { X: PAL[k] } }), x, HY + (i % 2 ? 0.03 : -0.01)));
+
+  // left column
+  const heart = put(pixelArt(SHAPES.heart, { cell: 0.042, colors: { X: PAL.P } }), -1.86, 1.58, 0.12);
+  put(pixelArt(SHAPES.controller, { cell: 0.026, colors: { G: PAL.I, R: PAL.P } }), -1.8, 0.86, -0.1);
+  // right column
+  put(pixelArt(SHAPES.star, { cell: 0.03, colors: { X: 'mirror' } }), 1.86, 1.6, -0.1);
+  put(pixelArt(SHAPES.play, { cell: 0.03, colors: { X: PAL.C } }), 1.8, 0.86, 0.08);
+  // sparkles
+  [[-1.45, 2.02, 'S'], [-2.28, 1.08, 'Y'], [1.46, 2.0, 'Y'], [2.3, 1.12, 'I']]
+    .forEach(([x, y, k]) => put(pixelArt(SPARKLE, { cell: 0.025, colors: { X: PAL[k] } }), x, y));
+
+  // retro stripes along the bottom of the wall
+  [[0.4, PAL.Y], [0.325, PAL.P], [0.25, PAL.V], [0.175, PAL.B]].forEach(([y, col]) => {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.05, 0.004), mat(col, { roughness: 0.6 }));
+    s.position.set(0, y, 0.006); s.receiveShadow = true; pb3.group.add(s);
+  });
+
+  const rw = rev.userData.size.w, hw = heart.userData.size.w;
+  dim(PB, pb3.group, V(-rw / 2, HY + 0.24, 0.08), V(rw / 2, HY + 0.24, 0.08), `≈${Math.round(rw * 100)}cm`);
+  dim(PB, pb3.group, V(-1.86 - hw / 2, 1.3, 0.08), V(-1.86 + hw / 2, 1.3, 0.08), `≈${Math.round(hw * 100)}cm`);
 }
 
-// 3 — vinyl records
-const pb3 = part(PB, 'pb-vinyl', '3', 'Đĩa than trang trí', `
-  <ul><li>Đĩa than đen dán rải trên rèm như ảnh tham khảo, hợp theme Retro 80s Disco.</li>
-  <li>Mô hình: 6 đĩa Ø30cm, đặt ở mép rèm để không bị khung ảnh che.</li>
-  <li><em>Gợi ý:</em> không có đĩa thật thì in hoặc cắt từ bìa đen; nhãn giữa dùng màu trong bảng màu.</li></ul>`,
-  { explode: V(0, 0, 1.0), anchor: V(0.95, 2.33, 0.1), view: V(0.3, 0.1, 1) });
-[[-0.9, 2.12, PAL.P], [-0.4, 2.3, PAL.Y], [0.3, 2.24, PAL.C], [0.88, 2.06, PAL.V], [-0.95, 1.25, PAL.L], [0.95, 1.1, PAL.O]]
-  .forEach(([x, y, c]) => { const v = vinyl(0.15, c); v.position.set(x, y, 0.06); pb3.group.add(v); });
-
-// 8 — people for scale
-const pb8 = part(PB, 'pb-people', '8', 'Người chụp (để so tỉ lệ)', `
-  <ul><li>3 người cao ~1,6–1,7m đứng sau khung để ước lượng tỉ lệ. Khung vừa cho 3–4 người.</li>
-  <li>Ẩn/hiện bằng nút <b>Người (tỉ lệ)</b>.</li></ul>`,
-  { explode: V(0, 0, 1.3), anchor: V(-0.42, 1.8, 0.8), view: V(0.5, 0.2, 1) });
-[[-0.42, 1.6], [0, 1.7], [0.42, 1.62]].forEach(([x, h]) => { const p = person(h); p.position.set(x, 0, 0.8); pb8.group.add(p); });
-PB.peoplePart = pb8;
-
-// 5 — handheld photo frame
+// 4 — white handheld photo frame
+const FW = 1.7, FH = 1.15, FY = 1.38, FZ = 1.15, FT = 0.02, FSD = 0.13;
 let frameMat;
-const pb5 = part(PB, 'pb-frame', '5', 'Khung ảnh cầm tay', `
-  <ul><li>To cỡ khung "CHECKPOINT" trong ảnh tham khảo, không cần to bằng cả tấm bảng. Đủ cho 3–4 người.</li>
-  <li>Mô hình: ngoài 1,5m × 1,05m, lỗ trong ~1,26m × 0,67m.</li>
-  <li>Khung trắng (theo ghi chú). Chữ pixel dán thẳng lên khung: <b>LET'S PLAY</b>, <b>UEVP REV26</b>, badge <b>LEVEL UP</b>.</li>
-  <li>Element trên khung to ~20–25cm: trái tim, tay cầm game, ngôi sao. Hai cạnh bên có ma và Pac-Man nhỏ.</li>
-  <li><em>Gợi ý:</em> làm bằng foam board / formex 5mm.</li></ul>
-  <button class="mini" data-act="frameColor">Đổi màu khung: trắng ↔ đen</button>`,
-  { explode: V(0, 0, 2.0), view: V(0.35, 0.15, 1), minDist: 2.0 });
+const pb4 = part(PB, 'pb-frame', '4', 'Khung ảnh trắng cầm tay', `
+  <ul><li>Mô tả trên bảng: "Có thể đủ to cho từ 3–4 người chụp chung", "Khung trắng".</li>
+  <li>Mô hình: ngoài 1,7m × 1,15m, lỗ trong ~1,44m × 0,71m, vừa 4 khuôn mặt đứng sát nhau.</li>
+  <li>Chữ pixel dán thẳng lên khung: <b>LET'S PLAY</b> ở cạnh trên, <b>UEVP</b> và <b>CHECKPOINT</b> ở cạnh dưới.</li>
+  <li>Element to <b>20–25cm</b> (mô hình ~23cm): Pac-Man, trái tim, tay cầm game, ngôi sao ở 4 góc; ma Pac-Man và đồng xu ở hai cạnh bên. Element chờm ra ngoài mép khung cho vui mắt.</li>
+  <li><em>Gợi ý:</em> làm bằng foam board / formex 5mm cho nhẹ, dễ cầm.</li></ul>`,
+  { explode: V(0, 0, 2.0), view: V(0.35, 0.15, 1), minDist: 2.1 });
 {
-  const W = 1.5, H = 1.05, sd = 0.12, tp = 0.2, bt = 0.18, T = 0.02;
+  const W = FW, H = FH, sd = FSD, tp = 0.22, bt = 0.22, T = FT;
   frameMat = new THREE.MeshStandardMaterial({ color: '#f3f3f0', roughness: 0.75 });
-  const g = new THREE.Group(); g.position.set(0, 1.35, 1.15);
+  const g = new THREE.Group(); g.position.set(0, FY, FZ);
   const box = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, T), frameMat); m.position.set(x, y, 0); m.castShadow = true; g.add(m); };
   box(W, tp, 0, H / 2 - tp / 2); box(W, bt, 0, -H / 2 + bt / 2);
   const ih = H - tp - bt, iy = (-H / 2 + bt + H / 2 - tp) / 2;
   box(sd, ih, -W / 2 + sd / 2, iy); box(sd, ih, W / 2 - sd / 2, iy);
   const put = (o, x, y, rz = 0, z = T / 2 + 0.001) => { o.position.set(x, y, z); o.rotation.z = rz; g.add(o); return o; };
-  put(pixelText("LET'S PLAY", ['P', 'Y', 'C', 'B', 'V', 'O', 'L'], 0.0105), 0.05, H / 2 - tp / 2);
-  put(pixelText('UEVP REV26', ['B', 'B', 'B', 'B', 'P', 'P', 'P', 'P', 'P'], 0.0105), 0, -H / 2 + bt / 2);
-  ['R', 'P', 'C', 'O'].forEach((c, i) => put(pixelArt(SHAPES.ghost, { cell: 0.0062, colors: { X: PAL[c] } }), -W / 2 + sd / 2, iy + 0.24 - i * 0.16));
-  put(pixelArt(SHAPES.pacman, { cell: 0.0066 }), W / 2 - sd / 2, iy + 0.24, -Math.PI / 2);
-  [0, 1, 2].forEach(i => put(pixelArt(SHAPES.coin, { cell: 0.009 }), W / 2 - sd / 2, iy + 0.06 - i * 0.14));
-  put(pixelArt(SHAPES.heart, { cell: 0.019, colors: { X: PAL.R } }), W / 2 - 0.02, H / 2 - 0.02, -0.25, T / 2 + 0.006);
-  put(badge('LEVEL UP', ['Y', 'Y', 'Y', 'Y', 'Y', 'L', 'L'], 0.008, PAL.V), -W / 2 + 0.12, H / 2 + 0.01, 0.18, T / 2 + 0.008);
-  put(pixelArt(SHAPES.controller, { cell: 0.013 }), -W / 2 + 0.06, -H / 2 + 0.05, 0.2, T / 2 + 0.006);
-  put(pixelArt(SHAPES.star, { cell: 0.013, colors: { X: PAL.Y } }), W / 2 - 0.05, -H / 2 + 0.04, -0.15, T / 2 + 0.006);
-  pb5.group.add(g);
-  dim(PB, pb5.group, V(-0.75, 0.74, 1.17), V(0.75, 0.74, 1.17), '1,5m');
-  dim(PB, pb5.group, V(0.9, 0.825, 1.17), V(0.9, 1.875, 1.17), '1,05m');
+  const ez = T / 2 + 0.008;
+  // pixel text stuck straight onto the frame
+  put(pixelText("LET'S PLAY", ['P', 'Y', 'C', 'B', 'V', 'I', 'L'], 0.013), 0, H / 2 - tp / 2);
+  put(pixelText('UEVP', ['P', 'C', 'Y', 'I'], 0.016), -0.36, -H / 2 + bt / 2);
+  put(pixelText('CHECKPOINT', ['V', 'V', 'V', 'V', 'V', 'B', 'B', 'B', 'B', 'B'], 0.0105), 0.22, -H / 2 + bt / 2);
+  // big elements, ~23cm each
+  const cx = W / 2 - 0.06, cy = H / 2 - 0.05;
+  put(pixelArt(SHAPES.pacman, { cell: 0.015 }), -cx, cy, 0.15, ez);
+  put(pixelArt(SHAPES.heart, { cell: 0.021, colors: { X: PAL.P } }), cx, cy, -0.2, ez);
+  put(pixelArt(SHAPES.controller, { cell: 0.013, colors: { G: PAL.I, R: PAL.P } }), -cx, -cy, 0.18, ez);
+  put(pixelArt(SHAPES.star, { cell: 0.0135, colors: { X: PAL.Y } }), cx, -cy, -0.15, ez);
+  put(pixelArt(SHAPES.ghost, { cell: 0.0145, colors: { X: PAL.C } }), -W / 2 + sd / 2 - 0.02, iy, -0.1, ez);
+  put(pixelArt(SHAPES.coin, { cell: 0.022, colors: { O: '#c48a00' } }), W / 2 - sd / 2 + 0.02, iy, 0.12, ez);
+  pb4.group.add(g);
+  const bY = FY - H / 2, tY = FY + H / 2, dz = FZ + 0.03;
+  dim(PB, pb4.group, V(-W / 2, bY - 0.08, dz), V(W / 2, bY - 0.08, dz), '1,7m');
+  dim(PB, pb4.group, V(W / 2 + 0.16, bY, dz), V(W / 2 + 0.16, tY, dz), '1,15m');
+  dim(PB, pb4.group, V(cx - 0.115, tY + 0.1, dz), V(cx + 0.115, tY + 0.1, dz), '≈23cm');
 }
 
-// 6 — handles
-const pb6 = part(PB, 'pb-handles', '6', 'Tay cầm phía sau khung', `
-  <ul><li>Hai tay cầm dán phía sau khung để 2 người đứng ngoài cùng cầm.</li>
-  <li><em>Gợi ý:</em> thanh gỗ hoặc ống nhựa ~50cm, cố định bằng băng dính vải hoặc keo nến.</li></ul>`,
-  { explode: V(0, 0, 2.0), view: V(0.8, 0.2, -0.6), minDist: 1.1, anchor: V(0.69, 0.5, 1.1) });
+// 5 — handles
+const pb5 = part(PB, 'pb-handles', '5', 'Tay cầm dán phía sau khung', `
+  <ul><li>Mô tả trên bảng: "dùng 2 phần tay cầm dán phía sau". Hai tay cầm dán dọc hai cạnh bên, thò xuống dưới khung ~25cm để 2 người đứng ngoài cùng cầm.</li>
+  <li><em>Gợi ý:</em> thanh gỗ hoặc ống nhựa ~70cm, cố định bằng băng dính vải hoặc keo nến.</li></ul>`,
+  { explode: V(0, 0, 2.0), view: V(0.8, 0.2, -0.6), minDist: 1.1, anchor: V(FW / 2 - FSD / 2, 0.45, FZ - 0.03) });
 {
   const wood = mat('#c49a6c', { roughness: 0.7 });
-  [-0.69, 0.69].forEach(x => pb6.group.add(rod(V(x, 0.6, 1.124), V(x, 1.15, 1.124), 0.016, wood)));
+  const hx = FW / 2 - FSD / 2, hz = FZ - FT / 2 - 0.017;
+  [-hx, hx].forEach(x => pb5.group.add(rod(V(x, 0.55, hz), V(x, 1.25, hz), 0.016, wood)));
 }
 
-// 7 — tripod (alternative)
-const pb7 = part(PB, 'pb-tripod', '7', 'Chân tripod (phương án 2)', `
-  <ul><li>Thay vì cầm tay, có thể để khung đứng trên tripod. Vẽ mờ vì đây là phương án thay thế.</li>
-  <li><em>Gợi ý:</em> kẹp khung vào chân đèn/loa, tâm khung cao ~1,35m.</li></ul>`,
+// 6 — tripod (alternative)
+const pb6 = part(PB, 'pb-tripod', '6', 'Hoặc đặt đứng trên tripod', `
+  <ul><li>Mô tả trên bảng: "hoặc để đứng bằng tripod". Đây là phương án thay thế cho tay cầm nên vẽ mờ.</li>
+  <li><em>Gợi ý:</em> kẹp cạnh dưới khung vào chân đèn/loa, tâm khung cao ~1,4m. Khi dùng tripod, cả 4 người đều rảnh tay để tạo dáng.</li></ul>`,
   { explode: V(0, 0, 2.0), anchor: V(-0.25, 0.22, 1.25), view: V(0.6, 0.3, 1) });
 {
   const tm = new THREE.MeshStandardMaterial({ color: '#2a2d36', roughness: 0.5, metalness: 0.4, transparent: true, opacity: 0.45, depthWrite: false });
   const apex = V(0, 0.48, 1.1);
-  pb7.group.add(rod(apex, V(0, 0.84, 1.1), 0.014, tm));
-  for (let i = 0; i < 3; i++) { const a = Math.PI / 2 + i * 2 * Math.PI / 3; pb7.group.add(rod(apex, V(Math.cos(a) * 0.4, 0, 1.1 + Math.sin(a) * 0.4), 0.011, tm)); }
+  pb6.group.add(rod(apex, V(0, 0.84, 1.1), 0.014, tm));
+  for (let i = 0; i < 3; i++) { const a = Math.PI / 2 + i * 2 * Math.PI / 3; pb6.group.add(rod(apex, V(Math.cos(a) * 0.4, 0, 1.1 + Math.sin(a) * 0.4), 0.011, tm)); }
   const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.04), tm); clamp.position.set(0, 0.84, 1.12);
-  pb7.group.add(clamp);
+  pb6.group.add(clamp);
 }
+
+// 7 — people for scale
+const pb7 = part(PB, 'pb-people', '7', 'Người chụp (để so tỉ lệ)', `
+  <ul><li>4 người cao ~1,6–1,7m đứng sau khung để kiểm tra khung đủ to cho 3–4 người.</li>
+  <li>Ẩn/hiện bằng nút <b>Người (tỉ lệ)</b>.</li></ul>`,
+  { explode: V(0, 0, 1.3), anchor: V(-0.57, 1.85, 0.8), view: V(0.5, 0.2, 1) });
+[[-0.57, 1.62], [-0.19, 1.7], [0.19, 1.6], [0.57, 1.66]].forEach(([x, h]) => { const p = person(h); p.position.set(x, 0, 0.8); pb7.group.add(p); });
+PB.peoplePart = pb7;
 finalize(PB);
 
 /* ================================================================ AREA 2 — STAGE */
@@ -1329,7 +1355,7 @@ ovStage.userData.ownerPart = ov8; ov8.group.add(ovStage);
 
 // 9 — photozone (the real photobooth-tab parts are mounted here)
 const ov9 = part(OV, 'ov-photo', '9', 'Photozone', `
-  <ul><li>Toàn bộ tab <b>① Photobooth</b> nằm trên bức tường xám ở cuối nhánh phải: rèm kim tuyến, đĩa than, element, khung ảnh.</li>
+  <ul><li>Toàn bộ tab <b>① Photobooth</b> nằm trên bức tường xám ở cuối nhánh phải: tua rua và element pixel dán thẳng lên tường, khung ảnh trắng cầm tay.</li>
   <li><em>Lưu ý:</em> lối tới photozone bị kẹp giữa dãy bàn và dãy ghế cố định (lối đi ~3,5m trong mô hình), nên người chờ chụp sẽ đứng ngay trên lối đi.</li>
   <li>Mở tab ① để xem chi tiết từng phần.</li></ul>`,
   { anchor: atR(13.2, 2.5, 3.3), view: V(-S2, 0.7, S2), minDist: 6 });
