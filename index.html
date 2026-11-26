@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REV26 · Mô hình 3D trang trí — Photobooth & Phía sân khấu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,11 +81,86 @@
 
   #loading{position:fixed;inset:0;display:grid;place-items:center;color:var(--mut);font-size:14px;z-index:10;background:var(--bg)}
 
-  @media (max-width:900px){
-    .panel{top:auto;height:40vh;left:8px;right:8px;width:auto;bottom:8px}
-    .toolbar{bottom:calc(40vh + 16px);right:8px;max-width:none}
-    .note,.t2{display:none}
-    .top{flex-wrap:wrap}
+  .tabs .short{display:none}
+  :root{color-scheme:dark}
+  #partList{min-height:0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent}
+  #selLine{display:none;margin:3px 0 0;font-size:12.5px;font-weight:600;color:var(--acc)}
+  .hint-touch{display:none}
+
+  /* ---------- iPad landscape / small laptop: same layout, tighter */
+  @media (max-width:1366px){
+    .panel{width:300px}
+    .t2{display:none}
+    .toolbar{max-width:calc(100% - 340px);gap:5px}
+    .toolbar button{padding:8px 10px;font-size:12.5px}
+    .note{max-width:240px}
+  }
+  /* ---------- touch screens: touch wording, no hover-only titles */
+  @media (hover:none){
+    .hint-desk{display:none}
+    .hint-touch{display:block}
+  }
+
+  /* ---------- phone, phone landscape, tablet portrait: bottom sheet, compact chrome, quieter 3D labels */
+  @media (max-width:600px), (max-width:1024px) and (orientation:portrait), (max-height:500px){
+    .top{top:calc(8px + env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));gap:8px}
+    .brand > div:last-child{display:none}
+    .logo{font-size:10px;padding:8px 8px 6px;box-shadow:2px 2px 0 #000}
+    .tabs{padding:3px;gap:2px;border-radius:10px}
+    .tabs button{padding:7px 10px;font-size:12.5px}
+    .tabs .full{display:none}
+    .tabs .short{display:inline}
+    .note{display:none}
+
+    .panel{top:auto;left:0;right:0;bottom:0;width:auto;height:auto;max-height:62vh;max-height:62dvh;border-radius:16px 16px 0 0;
+      border-left:0;border-right:0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);transition:max-height .25s ease}
+    .panel.collapsed{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
+    .panel-head{cursor:pointer;padding:16px 16px 10px;position:relative;-webkit-tap-highlight-color:transparent}
+    .panel-head::before{content:"";position:absolute;top:6px;left:50%;width:38px;height:4px;border-radius:2px;
+      background:rgba(255,255,255,.28);transform:translateX(-50%)}
+    .panel-head::after{content:"Chạm để mở";position:absolute;right:16px;top:18px;font-size:11px;color:var(--mut)}
+    .panel:not(.collapsed) .panel-head::after{content:"Thu gọn"}
+    .panel-head h2{font-size:15px;padding-right:80px}
+    .panel.collapsed #areaSub,.panel.has-sel #areaSub{display:none}
+    .panel.collapsed #selLine:not([hidden]){display:block}
+    #areaSub{font-size:12.5px}
+    .pi{padding:10px;font-size:14px}
+    .desc{padding:2px 10px 12px 10px;font-size:13.5px;line-height:1.6}
+    .desc ul{padding-left:18px}
+    .panel-foot{padding:10px 16px 12px}
+    .hint-desk{display:none}
+    .hint-touch{display:block}
+
+    .toolbar{left:0;right:0;bottom:calc(var(--sheetH,64px) + 8px);max-width:none;flex-wrap:nowrap;overflow-x:auto;
+      justify-content:flex-start;padding:2px max(8px,env(safe-area-inset-right,0px)) 2px max(8px,env(safe-area-inset-left,0px));
+      scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .toolbar::-webkit-scrollbar{display:none}
+    .toolbar button{flex:none;padding:7px 11px;font-size:12.5px;border-radius:9px}
+
+    .hs{width:22px;height:22px}
+    .hs .n{width:22px;height:22px;font-size:9.5px;border-width:1.5px}
+    .hs .t{display:none !important}
+    .dim{font-size:9.5px;padding:0 4px}
+    .dim .dx{display:none}
+  }
+  /* ---------- tablet portrait (iPad, iPad mini): floating card instead of a full-width sheet */
+  @media (min-width:601px) and (max-width:1024px) and (orientation:portrait) and (min-height:501px){
+    .top{top:calc(14px + env(safe-area-inset-top,0px));left:16px;right:16px}
+    .tabs .full{display:inline}
+    .tabs .short{display:none}
+    .tabs button{padding:8px 12px;font-size:13.5px}
+    .logo{font-size:12px;padding:10px 10px 8px}
+    .panel{left:50%;right:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 32px));
+      transform:translateX(-50%);border:1px solid var(--line);border-radius:16px;max-height:46vh;max-height:46dvh;padding-bottom:0}
+    .panel.collapsed{max-height:64px}
+    .desc{font-size:14px}
+    .toolbar{bottom:calc(var(--sheetH,64px) + 28px + env(safe-area-inset-bottom,0px))}
+    .toolbar button:first-child{margin-left:auto}
+    .toolbar button:last-child{margin-right:auto}
+    .toolbar button{padding:8px 12px;font-size:13px}
+    .hs{width:26px;height:26px}
+    .hs .n{width:26px;height:26px;font-size:10.5px;border-width:2px}
+    .dim{font-size:10.5px;padding:1px 6px}
   }
 </style>
 <script type="importmap">
@@ -108,19 +183,20 @@
     </div>
   </div>
   <nav class="tabs">
-    <button data-area="overall">Tổng thể không gian</button>
-    <button data-area="photobooth">① Photobooth</button>
-    <button data-area="stage">② Phía sân khấu</button>
+    <button data-area="overall"><span class="full">Tổng thể không gian</span><span class="short">Tổng thể</span></button>
+    <button data-area="photobooth"><span class="full">① Photobooth</span><span class="short">Photobooth</span></button>
+    <button data-area="stage"><span class="full">② Phía sân khấu</span><span class="short">Sân khấu</span></button>
   </nav>
 </header>
 
 <aside class="panel">
-  <div class="panel-head"><h2 id="areaTitle"></h2><p id="areaSub"></p></div>
+  <div class="panel-head"><h2 id="areaTitle"></h2><p id="selLine" hidden></p><p id="areaSub"></p></div>
   <ol id="partList"></ol>
   <div class="panel-foot">
     <div class="pal-title">Bảng màu (lấy từ bảng Canva)</div>
     <div class="palette" id="palette"></div>
-    <div class="hint">Kéo chuột để xoay · Cuộn để zoom · Chuột phải hoặc 2 ngón để di chuyển · Bấm vào vật thể hoặc số để xem chi tiết</div>
+    <div class="hint hint-desk">Kéo chuột để xoay · Cuộn để zoom · Chuột phải để di chuyển · Bấm vào vật thể hoặc số để xem chi tiết</div>
+    <div class="hint hint-touch">1 ngón: xoay · 2 ngón: zoom và di chuyển · Chạm vào số để xem chi tiết · Kích thước chỉ là ước lượng</div>
   </div>
 </aside>
 
@@ -181,7 +257,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.495;
 controls.minDistance = 0.4;
-controls.maxDistance = 40;
+controls.maxDistance = 60;
 controls.autoRotateSpeed = 0.8;
 
 const hemi = new THREE.HemisphereLight(0xe6ebff, 0x3a2a20, 0.7);
@@ -544,7 +620,10 @@ function dim(area, parent, a, b, text, tick = 0.05) {
     b.clone().addScaledVector(perp, -tick), b.clone().addScaledVector(perp, tick)];
   const line = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), dimMat);
   line.renderOrder = 10;
-  const el = document.createElement('div'); el.className = 'dim'; el.textContent = text;
+  const el = document.createElement('div'); el.className = 'dim';
+  const m = text.match(/^(.*?)\s*(\(.*\))$/);   // "(ước lượng)" etc. is hidden on phones
+  if (m) { el.textContent = m[1]; const x = document.createElement('span'); x.className = 'dx'; x.textContent = ' ' + m[2]; el.appendChild(x); }
+  else el.textContent = text;
   const lbl = new CSS2DObject(el); lbl.position.copy(a).lerp(b, 0.5);
   const g = new THREE.Group(); g.add(line, lbl); parent.add(g);
   area.dims.push(g);
@@ -1396,7 +1475,7 @@ function focusPart(p) {
   scene.updateMatrixWorld(true);
   const b = new THREE.Box3().setFromObject(p.group);
   const c = b.getCenter(new THREE.Vector3());
-  const d = Math.max(p.minDist, b.getSize(new THREE.Vector3()).length() * 0.8);
+  const d = Math.max(p.minDist, b.getSize(new THREE.Vector3()).length() * 0.8) * camScale();
   flyTo(c.clone().addScaledVector(p.view, d), c);
 }
 function select(p, fly = true) {
@@ -1405,6 +1484,9 @@ function select(p, fly = true) {
   document.querySelectorAll('#partList > li').forEach(li => li.classList.toggle('sel', !!p && li.dataset.id === p.id));
   document.querySelectorAll('.hs').forEach(h => h.classList.remove('sel'));
   selHelper.visible = !!p;
+  const sl = $('#selLine'); sl.textContent = p ? `${p.num} · ${p.title}` : ''; sl.hidden = !p;
+  $('.panel').classList.toggle('has-sel', !!p);
+  if (isMobile()) setSheet(!!p);
   if (!p) return;
   p.label.classList.add('sel');
   if (fly) focusPart(p);
@@ -1456,7 +1538,7 @@ function showArea(key) {
   const a = areas[key];
   renderList(a);
   select(null);
-  const c = state.explode ? a.explodeCam : a.cam;
+  const c = camFor(state.explode ? a.explodeCam : a.cam);
   if (camera.position.lengthSq() === 0) { camera.position.copy(c.pos); controls.target.copy(c.tgt); }
   else flyTo(c.pos, c.tgt, 1.0);
   applyToggles();
@@ -1464,13 +1546,13 @@ function showArea(key) {
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => showArea(b.dataset.area)));
 
 const toggleBtn = (id, fn) => { const b = $(id); b.addEventListener('click', () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); fn(on); }); };
-toggleBtn('#bExplode', on => { state.explode = on; const a = areas[state.area]; const c = on ? a.explodeCam : a.cam; select(null); flyTo(c.pos, c.tgt, 1.1); });
+toggleBtn('#bExplode', on => { state.explode = on; const a = areas[state.area]; const c = camFor(on ? a.explodeCam : a.cam); select(null); flyTo(c.pos, c.tgt, 1.1); });
 toggleBtn('#bDims', on => { state.dims = on; applyToggles(); });
 toggleBtn('#bPeople', on => { state.people = on; applyToggles(); });
 toggleBtn('#bParty', on => setParty(on));
 toggleBtn('#bScreen', on => setScreen(on));
 toggleBtn('#bRotate', on => { controls.autoRotate = on; });
-$('#bReset').addEventListener('click', () => { const a = areas[state.area]; const c = state.explode ? a.explodeCam : a.cam; select(null); flyTo(c.pos, c.tgt); });
+$('#bReset').addEventListener('click', () => { const a = areas[state.area]; const c = camFor(state.explode ? a.explodeCam : a.cam); select(null); flyTo(c.pos, c.tgt); });
 
 function setScreen(on, snap = false) {
   state.screen = on;
@@ -1509,12 +1591,47 @@ renderer.domElement.addEventListener('pointerup', e => {
 });
 
 /* layout */
+const panel = $('.panel');
+const SHEET_MQ = matchMedia('(max-width: 600px), (max-width: 1024px) and (orientation: portrait), (max-height: 500px)');
+function isMobile() { return SHEET_MQ.matches; }
+let wasSheet = isMobile();
+function setSheet(open) { panel.classList.toggle('collapsed', !open); }
+$('.panel-head').addEventListener('click', () => { if (isMobile()) setSheet(panel.classList.contains('collapsed')); });
+// Keep the model centred in the part of the screen that the header, sheet and buttons leave free
+function updateViewOffset() {
+  const w = innerWidth, h = innerHeight;
+  if (!isMobile()) camera.setViewOffset(w, h, -(panel.offsetWidth + 16) / 2, 0, w, h);
+  else {
+    const top = $('.top').getBoundingClientRect().bottom;
+    const bottom = h - Math.min($('.toolbar').getBoundingClientRect().top, panel.getBoundingClientRect().top);
+    camera.setViewOffset(w, h, 0, (bottom - top) / 2, w, h);
+  }
+  camera.updateProjectionMatrix();
+}
+// On a narrow portrait screen, step the camera back so the scene still fits across
+function camScale() {
+  const a = camera.aspect, want = Math.tan((a < 1 ? 50 : 62) * Math.PI / 360) / a;
+  return Math.max(1, want / Math.tan(camera.fov * Math.PI / 360));
+}
+function camFor(c) { return { pos: c.tgt.clone().add(c.pos.clone().sub(c.tgt).multiplyScalar(camScale())), tgt: c.tgt }; }
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h); labelRenderer.setSize(w, h);
   camera.aspect = w / h;
-  if (w > 900) camera.setViewOffset(w, h, -180, 0, w, h); else camera.clearViewOffset();
-  camera.updateProjectionMatrix();
+  camera.fov = isMobile() && w < h ? 60 : 45;
+  const sheet = isMobile();
+  if (!sheet) panel.classList.remove('collapsed');
+  else if (!wasSheet && !selected) panel.classList.add('collapsed');
+  wasSheet = sheet;
+  updateViewOffset();
+}
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--sheetH', panel.offsetHeight + 'px');
+  updateViewOffset();
+}).observe(panel);
+if (isMobile()) {
+  panel.classList.add('collapsed');
+  state.dims = false; $('#bDims').classList.remove('on');
 }
 addEventListener('resize', resize);
 resize();
